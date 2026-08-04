@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- C-012：建立 GitHub repository 並部署 GitHub Pages；目前進行中。
+- C-013：修正 Pages workflow 的 repository enablement 設定，等待重新部署完成。
 
 ## In Progress
 

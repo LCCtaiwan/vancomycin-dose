@@ -25,6 +25,7 @@
 - C-010：移除使用者標記的兩個重複標題，避免 TDM 與逐次濃度區塊視覺層級重複。
 - C-011：在判讀狀態加入半衰期 t½，使用模型消除速率 k 以 ln(2)／k 計算。
 - C-012：依使用者要求準備建立公開 GitHub repository 並透過既有 Pages workflow 發布。
+- C-013：根據首次部署錯誤，將 Pages workflow 的 repository enablement 設為 true。
 
 ## Current Checkpoint
 
@@ -44,4 +45,4 @@
 - C-009 Browser gate：pass；候選 regimen 區塊已移除，750 mg q12h 逐次模擬、AUC／peak／trough 顯示、匯出優先使用試算值與 console 0 errors／0 warnings 均已驗證。此次驗證使用 HTTP 預覽。
 - C-010 Browser gate：pass；兩個指定標題已移除，TDM 欄位與逐次給藥區塊仍正常載入，console 0 errors／0 warnings。此次驗證使用 HTTP 預覽。
 - C-011 Browser gate：pass；有效模型顯示半衰期 7.6 h，腎功能不穩定時顯示 `—`，四項判讀指標與 390px 手機版均正常，console 0 errors／0 warnings。此次驗證使用 HTTP 預覽。
-- C-012 Publish gate：進行中。
+- C-012 Publish gate：首次 workflow 因 Pages enablement 缺少而失敗；C-013 修正後重新部署中。

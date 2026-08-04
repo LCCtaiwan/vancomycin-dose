@@ -71,3 +71,7 @@
 
 - 準備公開 GitHub repository `LCCtaiwan/vancomycin-dose` 與 GitHub Pages workflow。
 - 發布目標：`main` 分支 push 後由 GitHub Actions 部署根目錄內容。
+
+## C-013
+
+- 修正 `actions/configure-pages@v5`，明確設定 `enablement: true`，讓新 repository 可由 workflow 啟用 Pages。
