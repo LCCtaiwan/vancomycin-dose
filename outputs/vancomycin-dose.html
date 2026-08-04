@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Vancomycin 劑量調整與濃度預估</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #607080;
+      --line: #d9e1e8;
+      --paper: #f5f7f9;
+      --card: #ffffff;
+      --navy: #18324a;
+      --teal: #137c78;
+      --teal-soft: #e5f4f2;
+      --amber: #9a5c00;
+      --amber-soft: #fff5df;
+      --red: #a42c2c;
+      --red-soft: #fff0f0;
+      --shadow: 0 12px 30px rgba(20, 47, 70, .08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    }
+    header {
+      color: white;
+      background: linear-gradient(120deg, #132c43, #1c5665);
+      padding: 32px 20px 28px;
+    }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .eyebrow { margin: 0 0 8px; color: #b8e7e1; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    h1, h2, h3 { margin: 0; line-height: 1.2; }
+    h1 { max-width: 760px; font-size: clamp(28px, 4vw, 46px); letter-spacing: -.03em; }
+    header p { max-width: 760px; margin: 14px 0 0; color: #d8e7ec; }
+    main { padding: 24px 0 48px; }
+    .notice, .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .notice { padding: 16px 18px; margin-bottom: 18px; border-left: 5px solid var(--amber); background: var(--amber-soft); }
+    .notice strong { color: var(--amber); }
+    .grid { display: grid; gap: 18px; grid-template-columns: repeat(12, 1fr); }
+    .card { padding: 20px; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    .section-label { margin-bottom: 16px; color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .subhead { margin: 0 0 12px; font-size: 19px; }
+    .muted { color: var(--muted); }
+    .fields { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    label { display: grid; gap: 5px; color: #304252; font-size: 13px; font-weight: 700; }
+    input, select, button, textarea { font: inherit; }
+    input, select {
+      width: 100%; min-height: 42px; padding: 9px 11px; color: var(--ink);
+      background: white; border: 1px solid #b9c6d1; border-radius: 10px;
+    }
+    input:focus, select:focus, button:focus { outline: 3px solid rgba(19, 124, 120, .2); outline-offset: 2px; }
+    .full { grid-column: 1 / -1; }
+    .hidden { display: none !important; }
+    .check { display: flex; align-items: center; gap: 8px; min-height: 42px; font-weight: 600; }
+    .check input { width: 18px; min-height: 18px; accent-color: var(--teal); }
+    .metric-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
+    .status-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .metric { padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: #fbfcfd; }
+    .metric small { display: block; color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; margin-top: 2px; color: var(--navy); font-size: 20px; }
+    .pill { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+    .pill.ok { color: var(--teal); background: var(--teal-soft); }
+    .pill.warn { color: var(--amber); background: var(--amber-soft); }
+    .pill.stop { color: var(--red); background: var(--red-soft); }
+    .status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .status h2 { font-size: 21px; }
+    .warning { margin-top: 14px; padding: 12px 14px; border-radius: 12px; color: var(--red); background: var(--red-soft); }
+    .warning ul { margin: 6px 0 0 18px; padding: 0; }
+    .formula { margin: 14px 0 0; padding: 12px; color: #314957; background: #f0f6f7; border-radius: 10px; font-size: 13px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    button { min-height: 42px; padding: 9px 14px; border: 0; border-radius: 10px; cursor: pointer; font-weight: 800; }
+    .primary { color: white; background: var(--teal); }
+    .secondary { color: var(--navy); background: #e6edf2; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    th { color: var(--muted); font-size: 12px; }
+    .selected { background: var(--teal-soft); }
+    .chart-wrap { overflow-x: auto; padding-bottom: 2px; }
+    svg { display: block; width: 100%; min-width: 560px; height: 300px; background: #fbfcfd; border: 1px solid var(--line); border-radius: 12px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+    .legend span::before { content: ""; display: inline-block; width: 20px; height: 3px; margin: 0 6px 3px 0; background: var(--teal); }
+    .legend .dashed::before { background: repeating-linear-gradient(90deg, var(--navy) 0 6px, transparent 6px 10px); }
+    .legend .dot::before { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+    pre { overflow: auto; max-height: 360px; margin: 14px 0 0; padding: 15px; color: #263744; background: #f4f7f8; border-radius: 12px; white-space: pre-wrap; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    footer { padding: 0 0 40px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 900px) { .span-4, .span-5, .span-7, .span-8 { grid-column: span 12; } }
+    @media (max-width: 620px) {
+      .wrap { width: min(100% - 22px, 1180px); }
+      header { padding: 25px 11px 23px; }
+      main { padding-top: 14px; }
+      .card { padding: 15px; border-radius: 14px; }
+      .fields, .metric-grid { grid-template-columns: 1fr; }
+      .status { align-items: flex-start; flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Clinical learning / decision support prototype</p>
+      <h1>Vancomycin 劑量調整與濃度預估</h1>
+      <p>以實際 peak／trough 與給藥時間建立參考濃度曲線，協助比較劑量調整方向。所有數字都需要由藥師／醫師依院內規範覆核。</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="notice"><strong>先確認邊界：</strong>本頁是決策輔助原型，不是自動醫囑。腎功能不穩定、RRT 狀態改變、或抽血／給藥時間不可靠時，不會輸出具體新劑量。</div>
+
+    <section class="grid" aria-label="Vancomycin dosing workspace">
+      <article class="card span-5">
+        <div class="section-label">01 / Patient</div>
+        <h2 class="subhead">患者與腎功能</h2>
+        <div class="fields">
+          <label>病歷號（選填）<input id="patientId" autocomplete="off" placeholder="不填姓名"></label>
+          <label>年齡（歲）<input id="age" type="number" min="18" step="1" value="65"></label>
+          <label>性別<select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label>
+          <label>身高（cm）<input id="height" type="number" min="100" step="0.1" value="170"></label>
+          <label>實際體重（kg）<input id="weight" type="number" min="20" step="0.1" value="70"></label>
+          <label>Scr（mg/dL）<input id="scr" type="number" min="0.1" step="0.01" value="1.0"></label>
+          <label>腎功能狀態<select id="renalStable"><option value="stable">相對穩定</option><option value="unstable">不穩定／正在變化</option></select></label>
+          <label>RRT 狀態<select id="rrt"><option value="none">無 RRT</option><option value="hd">間歇性 HD</option><option value="crrt">CRRT</option></select></label>
+          <label class="full">RRT／透析狀態近期是否改變？<span class="check"><input id="rrtChanged" type="checkbox"> 是，請停止自動劑量建議</span></label>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><small>IBW</small><strong id="ibwOut">—</strong></div>
+          <div class="metric"><small>估算 CrCl</small><strong id="crclOut">—</strong></div>
+          <div class="metric"><small>計算體重</small><strong id="weightBasisOut">—</strong></div>
+        </div>
+      </article>
+
+      <article class="card span-12">
+        <div class="status"><div><div class="section-label">02 / First dose</div><h2 class="subhead">首次劑量路徑</h2></div><span id="firstDosePill" class="pill warn">資料檢查中</span></div>
+        <div class="fields">
+          <label id="dosingContextField" class="full">感染／治療情境<select id="dosingContext"><option value="standard">一般成人／院內通用</option><option value="serious">嚴重 MRSA／重症／需要快速達標</option></select></label>
+          <label id="crrtField" class="hidden">CRRT effluent rate（mL/kg/h）<input id="crrtEffluent" type="number" min="0" step="1" value="20"></label>
+        </div>
+        <div id="firstDoseSummary" class="metric-grid"><div class="metric"><small>loading dose</small><strong>—</strong></div><div class="metric"><small>院內首次 regimen</small><strong>—</strong></div><div class="metric"><small>首次監測</small><strong>—</strong></div></div>
+        <div id="firstDoseNote" class="formula">首次劑量仍需依感染嚴重度、腎功能、RRT 模式與院內規範覆核；loading dose 不取代後續 TDM。</div>
+      </article>
+
+      <article class="card span-7">
+        <div class="section-label">03 / TDM</div>
+        <h3 class="subhead">本次 TDM 實際資料</h3>
+        <div class="fields">
+          <label>目前每次劑量（mg）<input id="currentDose" type="number" min="1" step="50" value="1000"></label>
+          <label>目前 interval（小時）<input id="currentInterval" type="number" min="1" step="1" value="12"></label>
+          <label>輸注時間（分鐘）<input id="infusionMinutes" type="number" min="60" step="15" value="120"></label>
+          <label>目標 AUC24（mg·h/L）<input id="targetAuc" type="number" min="400" max="600" step="10" value="500"></label>
+          <label>Peak（mg/L）<input id="peak" type="number" min="0.1" step="0.1" value="30"></label>
+          <label>Peak 抽血時間<input id="peakTime" type="datetime-local" value="2026-08-03T10:00"></label>
+          <label>Trough（mg/L）<input id="trough" type="number" min="0.1" step="0.1" value="12"></label>
+          <label>Trough 抽血時間<input id="troughTime" type="datetime-local" value="2026-08-03T20:00"></label>
+        </div>
+        <div class="formula">模型只接受 peak 高於 trough、且兩次抽血時間順序合理的資料。預估曲線是近似模型，不代表實際血中濃度；每次 regimen 改變或腎功能變化後都應重新監測。</div>
+        <h3 class="subhead trial-heading">藥師輸入後續 regimen</h3>
+        <div class="fields">
+          <label>後續每次劑量（mg）<input id="nextDose" type="number" min="1" step="50" placeholder="輸入欲比較劑量"></label>
+          <label>後續 interval（小時）<input id="nextInterval" type="number" min="1" step="1" placeholder="輸入欲比較 interval"></label>
+          <label>模擬給藥次數（次）<input id="simulationDoses" type="number" min="1" max="12" step="1" value="6"></label>
+        </div>
+        <div id="trialPreview" class="metric-grid" aria-live="polite"><div class="metric"><small>試算 regimen</small><strong>—</strong></div><div class="metric"><small>預估 AUC24</small><strong>—</strong></div><div class="metric"><small>預估 peak／trough</small><strong>—</strong></div></div>
+        <div id="trialNote" class="formula">先完成有效 TDM 資料，再輸入藥師欲比較的 dose 與 interval；輸注時間沿用本次 TDM 設定。此區為模型試算，不會自動改寫疑義處方。</div>
+      </article>
+
+      <article class="card span-4">
+        <div class="status"><h2>判讀狀態</h2><span id="statusPill" class="pill warn">資料檢查中</span></div>
+        <p id="statusText" class="muted">輸入資料後會顯示是否可產生具體調整參考。</p>
+        <div id="warningBox" class="warning"><strong>需要確認：</strong><ul id="warningList"><li>尚未完成資料檢查。</li></ul></div>
+        <div class="metric-grid status-metrics">
+          <div class="metric"><small>目前 AUC24</small><strong id="aucOut">—</strong></div>
+          <div class="metric"><small>目前每日總量</small><strong id="dailyOut">—</strong></div>
+          <div class="metric"><small>消除速率 k</small><strong id="keOut">—</strong></div>
+          <div class="metric"><small>半衰期 t½</small><strong id="halfLifeOut">—</strong></div>
+        </div>
+      </article>
+
+      <article class="card span-8">
+        <div class="section-label">04 / Dose adjustment</div>
+        <h2 class="subhead">調整後逐次濃度預估</h2>
+        <div class="status"><span id="simulationPill" class="pill warn">待輸入</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>給藥次序</th><th>給藥時間</th><th>給藥前 trough</th><th>輸注結束 peak</th><th>下一次給藥前 trough</th></tr></thead>
+            <tbody id="simulationRows"><tr><td colspan="5" class="muted">輸入後續 dose／interval 後顯示逐次濃度。</td></tr></tbody>
+          </table>
+        </div>
+        <div id="simulationNote" class="formula">模擬起點採最近一次 trough，假設調整後 dose／interval 固定重複；若實際調整不是在 trough 時點，需由藥師人工校正。</div>
+        <div class="formula">圖中實線為目前 regimen，虛線為藥師輸入的後續逐次 regimen；尚未輸入後續 regimen 時，僅顯示目前模型。</div>
+        <div class="chart-wrap" style="margin-top:16px"><svg id="chart" viewBox="0 0 760 300" role="img" aria-label="目前與調整後逐次 vancomycin 濃度預估曲線"></svg></div>
+        <div class="legend"><span>目前模型</span><span class="dashed">調整後逐次 regimen</span><span class="dot">實際 TDM 濃度</span></div>
+      </article>
+
+      <article class="card span-12">
+        <div class="section-label">05 / Query draft</div>
+        <div class="status"><h2>疑義處方文字</h2><span class="pill warn">供確認，不是自動醫囑</span></div>
+        <p class="muted">可複製到病歷或下載為 UTF-8 TXT。若資料不足，匯出內容只會寫出「資料不足，需人工覆核」，不會帶出具體新劑量。</p>
+        <div class="buttons"><button id="copyBtn" class="primary" type="button">複製疑義處方文字</button><button id="downloadBtn" class="secondary" type="button">下載 TXT</button></div>
+        <pre id="draftPreview" aria-live="polite"></pre>
+      </article>
+    </section>
+  </main>
+
+  <footer class="wrap">目標 AUC24/MIC 400–600 mg·h/L 只適用於特定嚴重 MRSA 情境；請整合感染部位、臨床反應、培養結果與院內流程。</footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const ids = ['patientId','age','sex','height','weight','scr','renalStable','rrt','rrtChanged','dosingContext','crrtEffluent','currentDose','currentInterval','infusionMinutes','targetAuc','peak','peakTime','trough','troughTime','nextDose','nextInterval','simulationDoses'];
+    const fmt = (value, digits = 1) => Number.isFinite(value) ? value.toFixed(digits) : '—';
+    const asNumber = (id) => Number($(id).value);
+    const parseTime = (id) => new Date($(id).value).getTime();
+
+    function calculateRenal() {
+      const age = asNumber('age');
+      const height = asNumber('height');
+      const weight = asNumber('weight');
+      const scr = asNumber('scr');
+      if (![age, height, weight, scr].every(Number.isFinite) || scr <= 0 || height <= 0 || weight <= 0 || age < 18) return { ibw: NaN, crcl: NaN, basis: '—' };
+      const ibw = ($( 'sex' ).value === 'male' ? 50 : 45.5) + 2.3 * Math.max(0, height / 2.54 - 60);
+      const ratio = weight / ibw;
+      const chosen = ratio > 1.2 ? ibw + 0.4 * (weight - ibw) : weight;
+      const crcl = ((140 - age) * chosen) / (72 * scr) * ($( 'sex' ).value === 'female' ? 0.85 : 1);
+      return { ibw, crcl, basis: ratio > 1.2 ? 'AdjBW' : 'ABW' };
+    }
+
+    function getInputs() {
+      return {
+        patientId: $('patientId').value.trim(), age: asNumber('age'), sex: $('sex').value,
+        height: asNumber('height'), weight: asNumber('weight'), scr: asNumber('scr'),
+        renalStable: $('renalStable').value, rrt: $('rrt').value, rrtChanged: $('rrtChanged').checked,
+        dose: asNumber('currentDose'), interval: asNumber('currentInterval'), infusionMinutes: asNumber('infusionMinutes'),
+        targetAuc: asNumber('targetAuc'), peak: asNumber('peak'), peakTime: parseTime('peakTime'),
+        trough: asNumber('trough'), troughTime: parseTime('troughTime'), crrtEffluent: asNumber('crrtEffluent'), dosingContext: $('dosingContext').value,
+        nextDose: asNumber('nextDose'), nextInterval: asNumber('nextInterval'), simulationDoses: asNumber('simulationDoses')
+      };
+    }
+
+    function fitModel(input) {
+      const blockers = [];
+      const renal = calculateRenal();
+      if (!Number.isFinite(input.dose) || input.dose <= 0) blockers.push('目前每次劑量未填妥。');
+      if (!Number.isFinite(input.interval) || input.interval <= 0) blockers.push('目前 interval 未填妥。');
+      if (!Number.isFinite(input.infusionMinutes) || input.infusionMinutes < 60) blockers.push('輸注時間不可少於 60 分鐘。');
+      if (Number.isFinite(input.interval) && Number.isFinite(input.infusionMinutes) && input.interval < input.infusionMinutes / 60) blockers.push('目前 interval 不可短於輸注時間。');
+      if (!Number.isFinite(input.targetAuc) || input.targetAuc < 400 || input.targetAuc > 600) blockers.push('目標 AUC 應介於 400–600 mg·h/L。');
+      if (!Number.isFinite(input.peak) || input.peak <= 0 || !Number.isFinite(input.trough) || input.trough <= 0) blockers.push('Peak 與 trough 濃度需要大於 0。');
+      if (!Number.isFinite(input.peakTime) || !Number.isFinite(input.troughTime) || input.troughTime <= input.peakTime) blockers.push('Peak／trough 時間順序不合理。');
+      if (input.peak <= input.trough) blockers.push('Peak 應高於 trough，請確認濃度或抽血時間。');
+      if (input.renalStable !== 'stable') blockers.push('腎功能不穩定，不能自動產生具體新劑量。');
+      if (input.rrt !== 'none') blockers.push('目前有 RRT，需依 RRT 專用院內 protocol 人工覆核。');
+      if (input.rrtChanged) blockers.push('RRT／透析狀態近期改變，不能自動產生具體新劑量。');
+      if (!Number.isFinite(renal.crcl)) blockers.push('患者腎功能資料未填妥。');
+      const deltaHours = (input.troughTime - input.peakTime) / 3600000;
+      if (deltaHours <= 0 || deltaHours > input.interval * 1.5) blockers.push('Peak 與 trough 不像位於同一個 dosing interval，請確認時間。');
+      if (blockers.length) return { valid: false, blockers, renal };
+
+      const ke = Math.log(input.peak / input.trough) / deltaHours;
+      const peakAfterEndHours = Math.max(0, Math.min(6, (input.peakTime - input.troughTime + input.interval * 3600000) / 3600000));
+      const endConcentration = input.peak * Math.exp(ke * peakAfterEndHours);
+      const infusionHours = input.infusionMinutes / 60;
+      const doseRate = input.dose / infusionHours;
+      const accumulation = 1 - Math.exp(-ke * input.interval);
+      const v = doseRate * (1 - Math.exp(-ke * infusionHours)) / (ke * endConcentration * accumulation);
+      const clearance = ke * v;
+      const dailyDose = input.dose * 24 / input.interval;
+      const auc24 = dailyDose / clearance;
+      if (!Number.isFinite(ke) || !Number.isFinite(v) || !Number.isFinite(clearance) || ke <= 0 || v <= 0 || clearance <= 0 || auc24 <= 0) {
+        blockers.push('目前 peak／trough 無法建立可靠的濃度模型。');
+        return { valid: false, blockers, renal };
+      }
+      return { valid: true, blockers: [], renal, ke, v, clearance, auc24, dailyDose, endConcentration, infusionHours };
+    }
+
+    function regimenMetrics(model, dose, interval) {
+      const infusionHours = model.infusionHours;
+      const rate = dose / infusionHours;
+      const end = rate * (1 - Math.exp(-model.ke * infusionHours)) / (model.ke * model.v * (1 - Math.exp(-model.ke * interval)));
+      const trough = end * Math.exp(-model.ke * (interval - infusionHours));
+      const peakAtOneHour = end * Math.exp(-model.ke * Math.min(1, Math.max(0, interval - infusionHours)));
+      const auc24 = (dose * 24 / interval) / model.clearance;
+      return { end, trough, peakAtOneHour, auc24 };
+    }
+
+    function curvePoints(model, dose, interval, width = 760, height = 300) {
+      const m = { left: 48, right: 18, top: 18, bottom: 36 };
+      const metric = regimenMetrics(model, dose, interval);
+      const maxC = Math.max(metric.end, metric.trough, 1) * 1.25;
+      const points = [];
+      for (let i = 0; i <= 80; i++) {
+        const t = interval * i / 80;
+        let c;
+        if (t <= model.infusionHours) {
+          const r = dose / model.infusionHours;
+          c = metric.trough * Math.exp(-model.ke * t) + r / (model.v * model.ke) * (1 - Math.exp(-model.ke * t));
+        } else {
+          c = metric.end * Math.exp(-model.ke * (t - model.infusionHours));
+        }
+        const x = m.left + (width - m.left - m.right) * t / interval;
+        const y = height - m.bottom - (height - m.top - m.bottom) * c / maxC;
+        points.push([x, y, c, t]);
+      }
+      return { points, maxC, m, metric, width, height };
+    }
+
+    function drawChart(model, candidate) {
+      const svg = $('chart');
+      if (!model) { svg.innerHTML = '<text x="30" y="60" fill="#607080">完成有效資料後顯示濃度預估曲線。</text>'; return; }
+      const current = curvePoints(model, asNumber('currentDose'), asNumber('currentInterval'));
+      const next = candidate ? curvePoints(model, candidate.dose, candidate.interval) : null;
+      const { m, width, height, maxC } = current;
+      const path = (data) => data.points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      const grid = [0, .25, .5, .75, 1].map((fraction) => {
+        const y = height - m.bottom - (height - m.top - m.bottom) * fraction;
+        const label = (maxC * fraction).toFixed(1);
+        return `<line x1="${m.left}" y1="${y}" x2="${width-m.right}" y2="${y}" stroke="#e4e9ed"/><text x="8" y="${y+4}" fill="#607080" font-size="11">${label}</text>`;
+      }).join('');
+      const obs = [
+        { c: asNumber('peak'), t: (parseTime('peakTime') - parseTime('troughTime') + asNumber('currentInterval') * 3600000) / 3600000 },
+        { c: asNumber('trough'), t: 0 }
+      ].map((o) => {
+        const x = m.left + (width - m.left - m.right) * o.t / asNumber('currentInterval');
+        const y = height - m.bottom - (height - m.top - m.bottom) * o.c / maxC;
+        return `<circle cx="${x}" cy="${y}" r="5" fill="#a42c2c" stroke="white" stroke-width="2"/>`;
+      }).join('');
+      svg.innerHTML = `${grid}<line x1="${m.left}" y1="${height-m.bottom}" x2="${width-m.right}" y2="${height-m.bottom}" stroke="#8da0ad"/><path d="${path(current)}" fill="none" stroke="#137c78" stroke-width="3"/>${next ? `<path d="${path(next)}" fill="none" stroke="#18324a" stroke-width="3" stroke-dasharray="8 6"/>` : ''}${obs}<text x="${m.left}" y="${height-10}" fill="#607080" font-size="11">0 h</text><text x="${width-m.right-32}" y="${height-10}" fill="#607080" font-size="11">${asNumber('currentInterval')} h</text><text x="${m.left+8}" y="${m.top+12}" fill="#607080" font-size="11">mg/L</text>`;
+    }
+
+    function candidateSet(model) {
+      const currentDose = asNumber('currentDose');
+      const currentInterval = asNumber('currentInterval');
+      const target = asNumber('targetAuc');
+      const idealDaily = currentDose * 24 / currentInterval * target / model.auc24;
+      const raw = [idealDaily * .8, idealDaily, idealDaily * 1.2].map((daily) => Math.max(250, Math.round(daily / 250) * 250));
+      return [...new Set(raw)].map((daily) => ({ dose: daily * currentInterval / 24, daily, interval: currentInterval, ...regimenMetrics(model, daily * currentInterval / 24, currentInterval) }));
+    }
+
+    function renderTrial(model, input) {
+      if (!model.valid) {
+        $('trialPreview').innerHTML = '<div class="metric"><small>試算 regimen</small><strong>—</strong></div><div class="metric"><small>預估 AUC24</small><strong>—</strong></div><div class="metric"><small>預估 peak／trough</small><strong>—</strong></div>';
+        $('trialNote').textContent = '目前 TDM 資料不足，需先完成資料確認；不顯示後續具體濃度。';
+        return null;
+      }
+      if (!Number.isFinite(input.nextDose) || input.nextDose <= 0 || !Number.isFinite(input.nextInterval) || input.nextInterval <= 0) {
+        $('trialPreview').innerHTML = '<div class="metric"><small>試算 regimen</small><strong>待輸入</strong></div><div class="metric"><small>預估 AUC24</small><strong>—</strong></div><div class="metric"><small>預估 peak／trough</small><strong>—</strong></div>';
+        $('trialNote').textContent = '請輸入藥師欲比較的後續 dose 與 interval；輸注時間沿用本次 TDM 設定。';
+        return null;
+      }
+      if (input.nextInterval <= model.infusionHours) {
+        $('trialPreview').innerHTML = '<div class="metric"><small>試算 regimen</small><strong>—</strong></div><div class="metric"><small>預估 AUC24</small><strong>—</strong></div><div class="metric"><small>預估 peak／trough</small><strong>—</strong></div>';
+        $('trialNote').textContent = '後續 interval 必須長於輸注時間，否則不顯示具體濃度預估。';
+        return null;
+      }
+      const trial = { dose: input.nextDose, interval: input.nextInterval, ...regimenMetrics(model, input.nextDose, input.nextInterval) };
+      $('trialPreview').innerHTML = `<div class="metric"><small>試算 regimen</small><strong>${fmt(trial.dose, 0)} mg q${fmt(trial.interval, 0)}h</strong></div><div class="metric"><small>預估 AUC24</small><strong>${fmt(trial.auc24, 0)} mg·h/L</strong></div><div class="metric"><small>預估 peak／trough</small><strong>${fmt(trial.peakAtOneHour, 1)}／${fmt(trial.trough, 1)} mg/L</strong></div>`;
+      $('trialNote').textContent = '以上為以本次 TDM 建立之近似模型，推估後續 regimen 穩態一個 interval 內的濃度變化；仍需依實際給藥與抽血時間重新監測。';
+      return trial;
+    }
+
+    function simulateRegimen(model, input, trial) {
+      if (!trial || !Number.isInteger(input.simulationDoses) || input.simulationDoses < 1 || input.simulationDoses > 12) return null;
+      const rows = [];
+      let preDose = input.trough;
+      for (let i = 0; i < input.simulationDoses; i++) {
+        const doseTime = i * trial.interval;
+        const peak = preDose * Math.exp(-model.ke * model.infusionHours) + (trial.dose / model.infusionHours) / (model.v * model.ke) * (1 - Math.exp(-model.ke * model.infusionHours));
+        const nextTrough = peak * Math.exp(-model.ke * (trial.interval - model.infusionHours));
+        rows.push({ number: i + 1, doseTime, preDose, peak, nextTrough });
+        preDose = nextTrough;
+      }
+      return { rows, totalHours: input.simulationDoses * trial.interval, interval: trial.interval, infusionHours: model.infusionHours };
+    }
+
+    function renderSimulation(model, input, trial) {
+      if (!model.valid) {
+        $('simulationPill').className = 'pill stop';
+        $('simulationPill').textContent = '資料不足';
+        $('simulationRows').innerHTML = '<tr><td colspan="5" class="muted">資料不足，需人工覆核；不顯示逐次具體濃度。</td></tr>';
+        $('simulationNote').textContent = '目前 TDM 資料不足，需先完成資料確認。';
+        return null;
+      }
+      if (Number.isFinite(input.nextDose) && input.nextDose > 0 && Number.isFinite(input.nextInterval) && input.nextInterval > 0 && input.nextInterval <= model.infusionHours) {
+        $('simulationPill').className = 'pill stop';
+        $('simulationPill').textContent = '需確認';
+        $('simulationRows').innerHTML = '<tr><td colspan="5" class="muted">後續 interval 短於輸注時間，不顯示逐次具體濃度。</td></tr>';
+        $('simulationNote').textContent = '後續 interval 必須長於輸注時間，請先修正 dose／interval。';
+        return null;
+      }
+      if (!trial) {
+        $('simulationPill').className = 'pill warn';
+        $('simulationPill').textContent = '待輸入';
+        $('simulationRows').innerHTML = '<tr><td colspan="5" class="muted">輸入後續 dose／interval 後顯示逐次濃度。</td></tr>';
+        $('simulationNote').textContent = '模擬起點採最近一次 trough，假設調整後 dose／interval 固定重複；若實際調整不是在 trough 時點，需由藥師人工校正。';
+        return null;
+      }
+      if (!Number.isInteger(input.simulationDoses) || input.simulationDoses < 1 || input.simulationDoses > 12) {
+        $('simulationPill').className = 'pill stop';
+        $('simulationPill').textContent = '需確認';
+        $('simulationRows').innerHTML = '<tr><td colspan="5" class="muted">模擬給藥次數需為 1–12 次的整數。</td></tr>';
+        $('simulationNote').textContent = '請輸入 1–12 次，避免以不合理的模擬範圍解讀濃度變化。';
+        return null;
+      }
+      const simulation = simulateRegimen(model, input, trial);
+      $('simulationPill').className = 'pill warn';
+      $('simulationPill').textContent = '模型試算';
+      $('simulationRows').innerHTML = simulation.rows.map((row) => `<tr><td>第 ${row.number} 次</td><td>${fmt(row.doseTime, 0)} h</td><td>${fmt(row.preDose, 1)} mg/L</td><td>${fmt(row.peak, 1)} mg/L</td><td>${fmt(row.nextTrough, 1)} mg/L</td></tr>`).join('');
+      $('simulationNote').textContent = `以最近一次 trough ${fmt(input.trough, 1)} mg/L 作為第 1 次給藥前起點，模擬 ${simulation.rows.length} 次 ${fmt(trial.dose, 0)} mg q${fmt(trial.interval, 0)}h；輸注時間沿用 ${fmt(input.infusionMinutes, 0)} 分鐘。這是濃度變化參考，不是自動醫囑。`;
+      return simulation;
+    }
+
+    function steadyStateConcentration(model, dose, interval, time) {
+      const metric = regimenMetrics(model, dose, interval);
+      const elapsed = ((time % interval) + interval) % interval;
+      if (elapsed <= model.infusionHours) {
+        const rate = dose / model.infusionHours;
+        return metric.trough * Math.exp(-model.ke * elapsed) + rate / (model.v * model.ke) * (1 - Math.exp(-model.ke * elapsed));
+      }
+      return metric.end * Math.exp(-model.ke * (elapsed - model.infusionHours));
+    }
+
+    function drawSerialChart(model, simulation) {
+      const svg = $('chart');
+      const width = 760, height = 300, m = { left: 48, right: 18, top: 18, bottom: 36 };
+      const totalHours = simulation.totalHours;
+      const currentPoints = [];
+      const simulatedPoints = [];
+      for (let i = 0; i <= 120; i++) {
+        const t = totalHours * i / 120;
+        currentPoints.push({ t, c: steadyStateConcentration(model, asNumber('currentDose'), asNumber('currentInterval'), t) });
+      }
+      simulation.rows.forEach((row) => {
+        for (let i = 0; i <= 20; i++) {
+          const local = simulation.interval * i / 20;
+          const c = local <= simulation.infusionHours
+            ? row.preDose * Math.exp(-model.ke * local) + (asNumber('nextDose') / simulation.infusionHours) / (model.v * model.ke) * (1 - Math.exp(-model.ke * local))
+            : row.peak * Math.exp(-model.ke * (local - simulation.infusionHours));
+          simulatedPoints.push({ t: row.doseTime + local, c });
+        }
+      });
+      const maxC = Math.max(...currentPoints.map((p) => p.c), ...simulatedPoints.map((p) => p.c), 1) * 1.2;
+      const point = (p) => [m.left + (width - m.left - m.right) * p.t / totalHours, height - m.bottom - (height - m.top - m.bottom) * p.c / maxC];
+      const path = (points) => points.map((p, i) => { const [x, y] = point(p); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`; }).join(' ');
+      const grid = [0, .25, .5, .75, 1].map((fraction) => {
+        const y = height - m.bottom - (height - m.top - m.bottom) * fraction;
+        return `<line x1="${m.left}" y1="${y}" x2="${width-m.right}" y2="${y}" stroke="#e4e9ed"/><text x="8" y="${y+4}" fill="#607080" font-size="11">${(maxC * fraction).toFixed(1)}</text>`;
+      }).join('');
+      const observed = point({ t: 0, c: asNumber('trough') });
+      const doseMarks = simulation.rows.map((row) => {
+        const [x, y] = point({ t: row.doseTime + simulation.infusionHours, c: row.peak });
+        return `<circle cx="${x}" cy="${y}" r="4" fill="#18324a"/>`;
+      }).join('');
+      svg.innerHTML = `${grid}<line x1="${m.left}" y1="${height-m.bottom}" x2="${width-m.right}" y2="${height-m.bottom}" stroke="#8da0ad"/><path d="${path(currentPoints)}" fill="none" stroke="#137c78" stroke-width="2.5"/><path d="${path(simulatedPoints)}" fill="none" stroke="#18324a" stroke-width="3" stroke-dasharray="8 6"/>${doseMarks}<circle cx="${observed[0]}" cy="${observed[1]}" r="5" fill="#a42c2c" stroke="white" stroke-width="2"/><text x="${m.left}" y="${height-10}" fill="#607080" font-size="11">0 h</text><text x="${width-m.right-42}" y="${height-10}" fill="#607080" font-size="11">${fmt(totalHours, 0)} h</text><text x="${m.left+8}" y="${m.top+12}" fill="#607080" font-size="11">mg/L</text>`;
+    }
+
+    function firstDosePlan(input) {
+      const renal = calculateRenal();
+      const weight = input.weight;
+      if (!Number.isFinite(weight) || weight <= 0 || !Number.isFinite(renal.crcl)) {
+        return { safe: false, cls: 'stop', label: '資料不足', firstLabel: 'loading dose', maintenanceLabel: '院內首次 regimen', loading: '—', maintenance: '—', monitoring: '—', note: '請先填妥年齡、身高、體重與 Scr。' };
+      }
+      if (input.renalStable !== 'stable') {
+        return { safe: false, cls: 'stop', label: '停止自動建議', firstLabel: 'loading dose', maintenanceLabel: '院內首次 regimen', loading: '—', maintenance: '—', monitoring: '人工覆核', note: '腎功能不穩定，首次劑量需由藥師／醫師依即時臨床資料與院內流程決定。' };
+      }
+      const range = (low, high) => `${fmt(low, 0)}–${fmt(high, 0)} mg`;
+      if (input.rrt === 'crrt') {
+        const effluent = asNumber('crrtEffluent');
+        if (!Number.isFinite(effluent) || effluent < 20 || effluent > 25) {
+          return { safe: false, cls: 'stop', label: '需人工覆核', firstLabel: 'loading dose', maintenanceLabel: '後續 maintenance', loading: '—', maintenance: '—', monitoring: '24 小時內濃度', note: '目前 CRRT effluent rate 不在 20–25 mL/kg/h 的參考範圍，不能自動帶出具體劑量。' };
+        }
+        return { safe: true, cls: 'warn', label: 'CRRT 參考', firstLabel: 'loading dose', maintenanceLabel: '後續 maintenance', loading: range(20 * weight, 25 * weight), maintenance: `${range(7.5 * weight, 10 * weight)} q12h`, monitoring: '24 小時內', note: 'CRRT 初始參考；後續 dose／interval 必須依濃度監測，不能只靠體重公式。' };
+      }
+      if (input.rrt === 'hd') {
+        return { safe: true, cls: 'warn', label: 'HD 參考', firstLabel: 'loading dose', maintenanceLabel: '後續 maintenance', loading: range(25 * weight, 35 * weight), maintenance: `${range(7.5 * weight, 15 * weight)} 透析後／依透析時機`, monitoring: '透析前濃度 15–20 mg/L', note: 'HD 劑量受透析膜與給藥時機影響；此處只顯示起始範圍，禁止直接當作 order。' };
+      }
+      const loading = input.dosingContext === 'serious' ? range(Math.min(3000, 20 * weight), Math.min(3000, 35 * weight)) : range(15 * weight, 20 * weight);
+      const note = input.dosingContext === 'serious'
+        ? '嚴重 MRSA／重症路徑：loading dose 以實際體重計算，最高 3,000 mg；後續 maintenance 仍需依腎功能與 TDM 選擇 q8 或 q12。'
+        : '一般成人院內通用：loading dose 為單次 15–20 mg/kg；後續院內首次 regimen 為 15–20 mg/kg q8–12h，仍需依腎功能與 TDM 調整。';
+      return { safe: true, cls: 'ok', label: input.dosingContext === 'serious' ? '嚴重感染參考' : '院內通用參考', firstLabel: 'loading dose', maintenanceLabel: input.dosingContext === 'serious' ? '後續 maintenance' : '院內首次 regimen', loading, maintenance: `${range(15 * weight, 20 * weight)} q8–12h`, monitoring: '24–48 小時內 TDM', note };
+    }
+
+    function renderFirstDose(input) {
+      const plan = firstDosePlan(input);
+      $('firstDosePill').className = `pill ${plan.cls}`;
+      $('firstDosePill').textContent = plan.label;
+      $('dosingContextField').classList.toggle('hidden', input.rrt !== 'none');
+      $('crrtField').classList.toggle('hidden', input.rrt !== 'crrt');
+      $('firstDoseSummary').innerHTML = `<div class="metric"><small>${plan.firstLabel}</small><strong>${plan.loading}</strong></div><div class="metric"><small>${plan.maintenanceLabel}</small><strong>${plan.maintenance}</strong></div><div class="metric"><small>首次監測</small><strong>${plan.monitoring}</strong></div>`;
+      $('firstDoseNote').textContent = plan.note;
+    }
+
+    function statusLabel(model) {
+      if (!model.valid) return { cls: 'stop', label: '停止自動建議', text: '資料不足，需人工覆核；不會輸出具體新劑量。' };
+      return { cls: 'ok', label: '可產生參考', text: '資料可建立參考模型；建議仍需由藥師／醫師覆核。' };
+    }
+
+    function buildDraft(model, candidate) {
+      const input = getInputs();
+      const renal = model.renal;
+      const currentRegimen = `Vancomycin ${Number.isFinite(input.dose) ? input.dose : '____'} mg IV every ${Number.isFinite(input.interval) ? input.interval : '____'} hours`;
+      const patient = input.patientId ? `病歷號：${input.patientId}` : '病歷號：未填寫';
+      const common = `Vancomycin 劑量調整疑義處方草稿\n\n${patient}\n\n目前處方：\n${currentRegimen}\n輸注時間：${Number.isFinite(input.infusionMinutes) ? input.infusionMinutes : '____'} 分鐘\n\n監測資料：\nPeak：${Number.isFinite(input.peak) ? input.peak : '____'} mg/L，抽血時間：${$('peakTime').value || '____'}\nTrough：${Number.isFinite(input.trough) ? input.trough : '____'} mg/L，抽血時間：${$('troughTime').value || '____'}\n目前估算 AUC24：${model.valid ? fmt(model.auc24, 0) + ' mg·h/L' : '無法可靠估算'}\nScr：${Number.isFinite(input.scr) ? input.scr : '____'} mg/dL，估算 CrCl：${Number.isFinite(renal.crcl) ? fmt(renal.crcl, 0) + ' mL/min' : '____'}\nRRT 狀態：${input.rrt === 'none' ? '無 RRT' : input.rrt.toUpperCase()}\n`;
+      if (!model.valid) {
+        return `${common}\n疑義：\n資料不足，需人工覆核。\n\n請確認給藥／抽血時間、腎功能趨勢、RRT 狀態與院內劑量調整流程後，再決定是否調整。\n\n請由醫師／藥師依院內規範確認後決定。\n本內容為決策輔助草稿，不是自動醫囑。`;
+      }
+      return `${common}\n疑義：\n目前估算暴露量與目標 AUC24 ${input.targetAuc} mg·h/L 不一致，請確認是否需要調整 regimen。\n\n建議供確認：\n是否考慮調整為 Vancomycin ${fmt(candidate.dose, 0)} mg IV every ${candidate.interval} hours？\n預估 AUC24：${fmt(candidate.auc24, 0)} mg·h/L\n預估 peak：${fmt(candidate.peakAtOneHour, 1)} mg/L\n預估 trough：${fmt(candidate.trough, 1)} mg/L\n\n後續監測／需確認：\n請依院內流程確認實際給藥與抽血時間，並於 regimen 或腎功能變化後重新監測。\n\n請由醫師／藥師依院內規範確認後決定。\n本內容為決策輔助草稿，不是自動醫囑。`;
+    }
+
+    function render() {
+      const input = getInputs();
+      renderFirstDose(input);
+      const renal = calculateRenal();
+      $('ibwOut').textContent = Number.isFinite(renal.ibw) ? `${fmt(renal.ibw)} kg` : '—';
+      $('crclOut').textContent = Number.isFinite(renal.crcl) ? `${fmt(renal.crcl, 0)} mL/min` : '—';
+      $('weightBasisOut').textContent = renal.basis;
+      const model = fitModel(input);
+      $('aucOut').textContent = model.valid ? `${fmt(model.auc24, 0)}` : '—';
+      $('dailyOut').textContent = model.valid ? `${fmt(model.dailyDose, 0)} mg` : '—';
+      $('keOut').textContent = model.valid ? `${fmt(model.ke, 3)} /h` : '—';
+      $('halfLifeOut').textContent = model.valid ? `${fmt(Math.log(2) / model.ke, 1)} h` : '—';
+      const state = statusLabel(model);
+      $('statusPill').className = `pill ${state.cls}`;
+      $('statusPill').textContent = state.label;
+      $('statusText').textContent = state.text;
+      const trial = renderTrial(model, input);
+      const simulation = renderSimulation(model, input, trial);
+      const list = model.valid ? ['輸出仍是模型參考，不能直接作為 order。'] : model.blockers;
+      $('warningList').innerHTML = list.map((item) => `<li>${item}</li>`).join('');
+      let candidate = null;
+      if (!model.valid) {
+        drawChart(null, null);
+      } else {
+        const candidates = candidateSet(model);
+        candidate = candidates.reduce((best, item) => Math.abs(item.auc24 - input.targetAuc) < Math.abs(best.auc24 - input.targetAuc) ? item : best, candidates[0]);
+        if (simulation) drawSerialChart(model, simulation);
+        else drawChart(model, null);
+      }
+      const exportCandidate = trial || candidate;
+      $('draftPreview').textContent = buildDraft(model, exportCandidate || { dose: NaN, interval: input.interval, auc24: NaN, peakAtOneHour: NaN, trough: NaN });
+      $('copyBtn').disabled = false;
+      $('downloadBtn').disabled = false;
+    }
+
+    async function copyDraft() {
+      const text = $('draftPreview').textContent;
+      try { await navigator.clipboard.writeText(text); }
+      catch (_) {
+        const area = document.createElement('textarea'); area.value = text; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove();
+      }
+      $('copyBtn').textContent = '已複製';
+      setTimeout(() => $('copyBtn').textContent = '複製疑義處方文字', 1400);
+    }
+
+    function downloadDraft() {
+      const blob = new Blob(['\ufeff', $('draftPreview').textContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = 'vancomycin-query-draft.txt'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    ids.forEach((id) => $(id).addEventListener('input', render));
+    ids.forEach((id) => $(id).addEventListener('change', render));
+    $('copyBtn').addEventListener('click', copyDraft);
+    $('downloadBtn').addEventListener('click', downloadDraft);
+    render();
+  </script>
+</body>
+</html>
