@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- C-013：修正 Pages workflow 的 repository enablement 設定，等待重新部署完成。
+- C-014：GitHub Pages 已成功部署，workflow 通過且網站回應 HTTP 200。
 
 ## In Progress
 

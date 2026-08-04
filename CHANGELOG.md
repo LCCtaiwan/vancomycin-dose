@@ -75,3 +75,8 @@
 ## C-013
 
 - 修正 `actions/configure-pages@v5`，明確設定 `enablement: true`，讓新 repository 可由 workflow 啟用 Pages。
+
+## C-014
+
+- GitHub Pages workflow 成功完成部署。
+- 驗證 URL：`https://lcctaiwan.github.io/vancomycin-dose/` 回應 HTTP 200。
