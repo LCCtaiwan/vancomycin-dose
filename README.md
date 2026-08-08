@@ -19,6 +19,10 @@ python3 -m http.server 8000
 
 然後開啟 `http://localhost:8000/`。
 
+## GitHub Pages
+
+公開使用網址：<https://lcctaiwan.github.io/vancomycin-dose/>
+
 ## 測試
 
 ```bash

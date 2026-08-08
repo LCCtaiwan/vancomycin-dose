@@ -2,7 +2,7 @@
 
 ## Current Goal
 
-完成 C-018：移除尚未與院內流程對齊的 Pharmacy note 檢驗值匯入原型，保留原本 Vancomycin AUC、note 同步與重新讀取功能。
+完成 C-019：將已清理的 Vancomycin AUC／Pharmacy note 工具安全發布至既有 GitHub repository 與 GitHub Pages。
 
 ## Stack And Run Commands
 
@@ -67,15 +67,15 @@
 
 ## Current Checkpoint
 
-- Implementation artifact is ready for local clinical review；目前不包含尚未確認的 HIS2／Excel 檢驗值匯入原型。資料夾目前沒有 `.git` 或 GitHub remote，因此 Pages 發布尚待指定 repository。
+- Implementation artifact is ready for local clinical review；目前不包含尚未確認的 HIS2／Excel 檢驗值匯入原型。已發布至 `LCCtaiwan/vancomycin-dose`，公開網址為 `https://lcctaiwan.github.io/vancomycin-dose/`。
 - Screenshots saved under `output/playwright/desktop.png` and `output/playwright/mobile.png`.
 - Handover database search was attempted but unavailable because its SQLite database could not be opened; local project records are the source of truth.
 
 ## Recommended Next Step
 
 1. 由院內藥師使用去識別化病例逐欄驗證 Excel 對應的 AUC 輸入、輸出、濃度圖表與 note 欄位。
-2. 指定可推送的 GitHub repository，建立 Pages workflow／發布分支。
-3. 驗證精簡 note 的英文句型、監測日期與院內工作流程；臨床 sign-off 後再標記 v0.1.0。
+2. 驗證精簡 note 的英文句型、監測日期與院內工作流程。
+3. 臨床 sign-off 後再標記 v0.1.0。
 
 ## Verification Status
 
@@ -84,4 +84,5 @@
 - UI and note gate: pass（desktop／mobile／file protocol／download smoke test；C-002 圖表 console errors 0）。
 - C-014 note linkage gate: pass（產生後修改感染適應症會同步更新輸出；Node 9/9）。
 - C-018 cleanup gate: pass；Node 9/9、AUC 頁面 smoke test、匯入控制不存在且 console errors 0。
+- C-019 Pages gate: pass；遠端 `index.html` SHA 與發布版本一致，Pages URL HTTP 200。
 - Clinical gate: pending（院內藥師 pass/revise/reject）。

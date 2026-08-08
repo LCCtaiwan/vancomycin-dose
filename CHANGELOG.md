@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## C-019 — 2026-08-08
+
+### Changed
+
+- 將目前 Vancomycin AUC／Pharmacy note 工具部署至 `LCCtaiwan/vancomycin-dose`。
+- 新增 GitHub Pages workflow 與公開使用網址。
+- 發布內容排除院內 Excel、Pharmacy note 原始資料與測試截圖。
+
+### Verification
+
+- Remote `index.html` SHA 與發布版本一致。
+- Pages URL HTTP 200：<https://lcctaiwan.github.io/vancomycin-dose/>
+
 ## C-018 — 2026-08-08
 
 ### Changed
@@ -11,7 +24,7 @@
 
 - Node tests: 9/9 pass。
 - Browser UI: pass；AUC24 與 15-dose profile 可顯示，匯入控制不存在，console errors 0。
-- GitHub Pages: blocked；目前資料夾沒有 Git repository／remote。
+- GitHub Pages: 已於 C-019 完成部署。
 
 ## C-017 — 2026-08-08
 

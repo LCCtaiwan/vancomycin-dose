@@ -2,10 +2,10 @@
 
 ## Current Status
 
-- Change ID: C-018
+- Change ID: C-019
 - Date: 2026-08-08
 - Scope: 移除尚未與院內流程對齊的 Pharmacy note 檢驗值匯入原型，保留原本 Vancomycin AUC 與 Pharmacy note 功能。
-- Status: Cleanup complete; awaiting院內藥師確認下一版檢驗值功能規格與 GitHub repository
+- Status: 已部署 GitHub Pages；awaiting院內藥師確認下一版檢驗值功能規格與 clinical sign-off
 
 ## Completed
 
@@ -35,6 +35,7 @@
 - Pharmacy note 已產生後，修改適應症、日期、診斷、培養、檢驗、生命徵象、評估或追蹤計畫會自動同步更新；直接編輯 note 後不覆寫人工文字。
 - Pharmacy note 增加「重新讀取資料並更新 note」按鈕，可手動重新帶入最新欄位。
 - 移除 C-016／C-017 的暫存 HIS2／Excel 匯入卡、解析程式與事件監聽，避免在規格未確認前影響原本頁面。
+- 已將安全發布檔案推送至 `LCCtaiwan/vancomycin-dose`，排除院內 Excel、Pharmacy note 原始資料與截圖。
 
 ## Next Steps
 
@@ -71,4 +72,4 @@
 - C-015 browser UI: pass；重新讀取按鈕可更新 note，無 console error。
 - C-018 unit tests: pass（9/9）；移除匯入原型後，原本 PK 與 note 測試維持通過。
 - C-018 browser smoke: pass；AUC24 目標、15-dose profile 可正常顯示，無匯入控制殘留，console errors 0。
-- GitHub Pages: blocked；目前資料夾不是 Git repository，沒有 remote 可供推送。
+- C-019 GitHub Pages: pass；`https://lcctaiwan.github.io/vancomycin-dose/` HTTP 200，遠端 `index.html` 與本地發布版本一致。
