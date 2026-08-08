@@ -1,46 +1,39 @@
-# SPEC：Vancomycin 劑量與 Dose 調整 HTML
+# SPEC
 
-## 目標
+## Goal
 
-建立一個離線、單檔、手機可用的成人 vancomycin AUC 導向決策支援原型。
+以純前端、可離線的單頁工具取代院內 Vancomycin AUC Excel 的主要工作流程，並將計算結果帶入既有 Pharmacy note。
 
-## 輸入
+## Inputs
 
-- 年齡、性別、身高、實際體重、血清肌酸酐。
-- 目前 vancomycin 劑量、間隔。
-- 已測得的 AUC24。
-- 本次 TDM 的 peak／trough 濃度與抽血時間，以及藥師輸入的後續 dose／interval 試算值。
-- 感染／治療情境，以及是否需要腎臟替代治療；HD／CRRT 走專用首次劑量參考分支。
+- 病人與 note 表頭資料。
+- 起始劑量：年齡、性別、身高、TBW、SCr、RRT、適應症。
+- AUC：dose、interval、infusion duration、給藥時間、trough 時間／濃度、peak 時間／濃度、MIC、下一次輸注間隔；時間格式為 24 小時制 `YYYY/MM/DD HH:mm`。
+- 人工新方案：dose、interval、infusion duration。
+- 診斷、培養、實驗室、生命徵象及藥師資料。
 
-## 輸出
+## Outputs
 
-- IBW、選用的 CrCl 計算體重、估算 CrCl。
-- 判讀狀態顯示消除速率 k 與半衰期 t½（以 ln(2)／k 計算）。
-- loading dose 的參考範圍（僅在勾選適用情境時顯示）。
-- 一般成人 loading dose：單次 15–20 mg/kg；後續院內首次 regimen：15–20 mg/kg q8–12h，兩者在介面分開呈現。
-- 以目前 AUC 與每日總劑量計算的數學調整參考。
-- 依本次 TDM 建立的近似模型，顯示藥師輸入之後續 regimen 的預估 AUC24、peak、trough 與一個 interval 內濃度曲線。
-- 顯示調整後固定 regimen 的逐次給藥表，以最近一次 trough 作為第 1 次給藥前起點，列出每次給藥前濃度、輸注結束 peak 與下一次給藥前 trough。
-- 疑義處方草稿：可複製文字或下載 UTF-8 TXT。
-- 匯出內容包含目前／建議 regimen、peak／trough、抽血時間、AUC、腎功能與 RRT 狀態；不包含 protocol、模型版本或版本日期。
-- TDM 檢查流程、安全警示與來源連結。
+- IBW、CrCl dosing weight、Cockcroft–Gault CrCl、起始劑量候選值與間隔提示。
+- ke、半衰期、Cmax/Cmin、Vd、CL、AUC24、AUC/MIC、15-dose profile。
+- 人工新方案的 New AUC、穩態 peak/trough 與 15-dose profile。
+- 目前／新方案 15-dose peak/trough 折線圖與逐次比較表。
+- Excel 對應的 trough 到 peak 時間、預計給藥前血中濃度、New AUC、Predicted Peak、Predicted Trough。
+- 可編輯 Pharmacy note、剪貼簿內容與 UTF-8 BOM TXT。
 
-## 功能範圍
+## Clinical Rules
 
-- AUC24/MIC 目標：400–600 mg·h/L，假設 MIC = 1 mg/L。
-- Cockcroft–Gault 估算僅作教學用途，明確提示不穩定腎功能時不可直接套用。
-- 所有數學結果標示為「參考」；不產生可直接複製成醫囑的 order。
+- 成人 ≥18 歲；RRT 首版不支援。
+- Vancomycin mg/kg 用 TBW；肥胖時 Cockcroft–Gault 用 AdjBW。
+- Loading 20 mg/kg，cap 3000 mg；maintenance 15 mg/kg/dose。
+- 250 mg 候選值須顯示實際 mg/kg，最終方案由藥師確認。
+- AUC24：<400 low、400–600 target、>600 high。
+- MIC >1、腎功能不穩或未達穩態須顯示警示。
 
-## 排除範圍
+## Acceptance Criteria
 
-兒科、孕婦、透析／CRRT、囊性纖維化、燒燙傷、連續輸注、非 IV 口服 C. difficile protocol、Bayesian 軟體整合、院內藥品規格與實際給藥時間排程。
-
-## 驗收條件
-
-- 可用 file:// 離線開啟。
-- 桌機與手機不出現水平溢出。
-- 可用鍵盤操作欄位與按鈕。
-- 變更輸入後，計算結果即時更新且清楚標示限制。
-- 腎功能不穩定、RRT 或資料品質不合格時，匯出只顯示「資料不足，需人工覆核」，不輸出具體新劑量。
-- 匯出草稿固定包含「本內容為決策輔助草稿，不是自動醫囑」。
-- 來源、版本日期與人工覆核警示可見。
+- 院內 Excel golden case 核心輸出與 15-dose profile 誤差 ≤0.5%。
+- 無效採血順序或不適用病人不可產出 PK 結果。
+- Note 的 S/O/A/P 與選定方案一致；複製與 TXT 內容相同。
+- 可直接以 `file://` 開啟，亦可由靜態伺服器部署。
+- 無持久化、無網路資料傳輸。

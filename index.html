@@ -3,10 +3,116 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=outputs/vancomycin-dose.html">
-  <title>Vancomycin 劑量調整與濃度預估</title>
+  <meta name="description" content="院內 Vancomycin AUC 計算與 Pharmacy Note 產生器">
+  <title>Vancomycin AUC Calculator</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <p><a href="outputs/vancomycin-dose.html">開啟 Vancomycin 劑量調整與濃度預估</a></p>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">PHARMACY CLINICAL TOOL · OFFLINE</p>
+      <h1>Vancomycin AUC 計算與 Pharmacy Note</h1>
+      <p class="subtitle">成人、非 RRT、間歇輸注之臨床決策輔助工具</p>
+    </div>
+    <button id="resetForm" class="button button-quiet" type="button">清除本頁資料</button>
+  </header>
+
+  <main class="layout">
+    <section class="notice warning">
+      <strong>臨床安全提醒</strong>
+      <span>本工具不取代藥師／醫師判斷。請確認採血時序、腎功能趨勢、感染部位、培養結果與最終劑量；首版不自動計算 HD、CRRT、SLED、PD。</span>
+    </section>
+
+    <section class="card" aria-labelledby="patient-heading">
+      <div class="card-heading"><div><p class="section-kicker">01 · DOSE INPUT</p><h2 id="patient-heading">起始劑量資料</h2></div><span class="pill">不儲存、不上傳</span></div>
+      <div id="empiricInputFields" class="form-grid">
+        <label>年齡（歲）<input id="age" type="number" min="0" step="1"></label>
+        <label>性別<select id="sex"><option value="male">男</option><option value="female">女</option></select></label>
+        <label>身高（cm）<input id="heightCm" type="number" min="1" step="0.1"></label>
+        <label>實際體重 TBW（kg）<input id="tbw" type="number" min="0" step="0.1"></label>
+        <label>SCr（mg/dL）<input id="scr" type="number" min="0" step="0.01"></label>
+        <label>RRT 狀態<select id="rrtType"><option value="none">None／非 RRT</option><option value="ihd">HD</option><option value="crrt">CRRT</option><option value="sled">SLED</option><option value="pd">PD</option></select></label>
+      </div>
+      <details class="optional-block">
+        <summary>Pharmacy note 資料（選填，不影響 AUC 計算）</summary>
+        <p class="helper">只有需要產出 Pharmacy note 時才填寫。</p>
+        <div class="form-grid">
+          <label>感染適應症<input id="indication" autocomplete="off"></label>
+          <label>Vancomycin 開始日期<input id="startDate" type="date"></label>
+          <label>藥師<input id="pharmacist" autocomplete="off"></label>
+          <label>聯絡電話<input id="phone" autocomplete="off"></label>
+          <label>填寫日期<input id="noteDate" type="date"></label>
+        </div>
+      <div class="form-grid form-grid-wide">
+        <label>診斷（可多筆，一行一筆）<textarea id="diagnosis" rows="2"></textarea></label>
+          <label>培養結果（可多筆，一行一筆）<textarea id="cultures" rows="2"></textarea></label>
+          <label>檢驗：CRP/PCT、BUN/SCr/CrCl、CBC<textarea id="labs" rows="2"></textarea></label>
+          <label>生命徵象<textarea id="vitals" rows="2"></textarea></label>
+        </div>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="mode-heading">
+      <div class="card-heading"><div><p class="section-kicker">02 · CALCULATION</p><h2 id="mode-heading">劑量與 AUC</h2></div></div>
+      <div class="mode-switch" role="tablist" aria-label="計算模式">
+        <button id="mode-empiric" class="mode-button active" type="button" role="tab">起始劑量</button>
+        <button id="mode-auc" class="mode-button" type="button" role="tab">雙點 AUC 調整</button>
+      </div>
+
+      <div id="empiricSection" class="mode-panel">
+        <p class="helper">Loading dose 20 mg/kg（上限 3000 mg）；maintenance dose 15 mg/kg/dose。Vancomycin mg/kg 皆以 TBW；Cockcroft–Gault 依體重規則選擇 TBW／AdjBW。250 mg 劑量候選值僅供藥師確認。</p>
+        <button id="calculateEmpiric" class="button button-primary" type="button">計算起始劑量</button>
+        <div id="empiricResult" class="result-area" hidden></div>
+      </div>
+
+      <div id="aucSection" class="mode-panel" hidden>
+        <div class="subheading"><h3>目前方案與兩點濃度</h3><span class="unit-note">欄位與院內 Excel 相同</span></div>
+        <div class="auc-target-note" role="note"><strong>AUC24 目標：400–600 mg·h/L</strong><span>MIC = 1 mg/L 時，AUC/MIC 目標亦為 400–600。</span></div>
+        <div class="form-grid">
+          <label>目前 dose（mg）<input id="currentDose" type="number" min="1" step="250"></label>
+          <label>目前 interval（hr）<input id="currentTau" type="number" min="1" step="1"></label>
+          <label>輸注時間（hr）<input id="currentTInf" type="number" min="0.1" step="0.1"></label>
+          <label>給藥時間（24小時制）<span class="datetime-picker" data-datetime-picker="doseDate"><input id="doseDateDate" type="date" aria-label="給藥日期"><select id="doseDateHour" aria-label="給藥小時"></select><select id="doseDateMinute" aria-label="給藥分鐘"></select><input id="doseDate" type="hidden"></span></label>
+          <label>抽 trough 時間（24小時制）<span class="datetime-picker" data-datetime-picker="troughDate"><input id="troughDateDate" type="date" aria-label="trough 日期"><select id="troughDateHour" aria-label="trough 小時"></select><select id="troughDateMinute" aria-label="trough 分鐘"></select><input id="troughDate" type="hidden"></span></label>
+          <label>trough（mg/L）<input id="troughConc" type="number" min="0.01" step="0.1"></label>
+          <label>抽 peak 時間（24小時制）<span class="datetime-picker" data-datetime-picker="peakDate"><input id="peakDateDate" type="date" aria-label="peak 日期"><select id="peakDateHour" aria-label="peak 小時"></select><select id="peakDateMinute" aria-label="peak 分鐘"></select><input id="peakDate" type="hidden"></span></label>
+          <label>peak（mg/L）<input id="peakConc" type="number" min="0.01" step="0.1"></label>
+          <label>MIC（mg/L）<input id="mic" type="number" min="0.01" step="0.1" value="1"></label>
+          <label>下一次輸注間隔（hr）<input id="nextDelay" type="number" min="0" step="0.1" placeholder="空白＝使用計算 Cmin"></label>
+        </div>
+        <h3 class="result-section-title auc-result-heading">目前 AUC 結果（輸入完成後顯示）</h3>
+        <div id="aucResult" class="result-area" hidden></div>
+        <div class="subheading"><h3>人工新方案試算</h3><span class="unit-note">不自動反推</span></div>
+        <div class="form-grid">
+          <label>更改 dose（mg）<input id="newDose" type="number" min="1" step="250" placeholder="先填 dose 即可試算"></label>
+          <label>更改 interval（hr）<input id="newTau" type="number" min="1" step="1" placeholder="空白＝沿用目前"></label>
+          <label>更改輸注時間（hr）<input id="newTInf" type="number" min="0.1" step="0.1" placeholder="空白＝沿用目前"></label>
+        </div>
+        <p class="helper">請人工確認腎功能近期穩定，且兩點濃度適用於穩態或可合理套用一室模型。</p>
+        <button id="calculateAuc" class="button button-primary" type="button">重新計算 AUC 與模擬</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="note-heading">
+      <div class="card-heading"><div><p class="section-kicker">03 · DOCUMENT</p><h2 id="note-heading">Pharmacy note</h2></div><span id="noteGate" class="pill pill-muted">尚未完成確認</span></div>
+      <p class="helper">Pharmacy note 為選填。需要產出時，再確認最終方案與監測計畫；產生後修改上方資料會同步更新，最後再編輯文字。</p>
+      <label class="checkbox-label confirm"><input id="confirmPlan" type="checkbox"> 我已確認本次 Vancomycin 最終劑量、間隔、輸注時間與監測計畫</label>
+      <label class="checkbox-label"><input id="useNewPlan" type="checkbox"> Pharmacy note 採用人工新方案（AUC 調整時）</label>
+      <div class="form-grid form-grid-wide">
+        <label>臨床評估補充<textarea id="assessment" rows="2"></textarea></label>
+        <label>追蹤計畫<textarea id="followUp" rows="2" placeholder="預設：48–72 小時複查腎功能與 Vancomycin level"></textarea></label>
+      </div>
+      <div class="action-row"><button id="generateNote" class="button button-primary" type="button">產生 Pharmacy note</button><button id="refreshNote" class="button" type="button">重新讀取資料並更新 note</button></div>
+      <div id="noteActions" class="action-row" hidden><button id="copyNote" class="button" type="button">複製完整 note</button><button id="downloadNote" class="button" type="button">匯出 UTF-8 TXT</button></div>
+      <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+      <textarea id="noteOutput" class="note-output" rows="26" spellcheck="false" placeholder="確認方案後，完整 note 會出現在這裡。"></textarea>
+    </section>
+  </main>
+  <footer class="footer">離線執行 · 不使用 localStorage、cookie、資料庫或網路 API · AUC 目標 400–600 mg·h/L</footer>
+  <script src="js/constants.js"></script>
+  <script src="js/pk.js"></script>
+  <script src="js/note.js"></script>
+  <script src="js/ui.js"></script>
 </body>
 </html>
