@@ -1,0 +1,24 @@
+{
+  "fixtureType": "formula-derived-not-real-his2-export",
+  "manualPatientInput": {
+    "sex": "male",
+    "age": 66,
+    "heightCm": 172.1,
+    "weightKg": 100
+  },
+  "calculated": {
+    "scrUsedMgDl": 1,
+    "ibwKg": 67.83858267716535,
+    "adjustedBodyWeightKg": 80.7031496062992,
+    "crclMlMin": 82.9,
+    "unadjustedWeightCrclMlMin": 102.8,
+    "bmi": 33.76278470046164
+  },
+  "expectedText": [
+    "66 year-old male, Wt 100kg (ABW 80.7kg)",
+    "2026/08/28 PCT: 1.2ng/mL, CRP: 3.4mg/dl, ESR: 50mm/hr, BUN: 16.8mg/dl, CRE: 0.6mg/dl, Clcr: 82.9ml/min.",
+    "2026/08/28 WBC: 8.02 *10^3/ul, N.band: 0%, N.seg.: 80.9%, Hb: 11.9g/dL, PL: 138 *10^3/ul.",
+    "2026/08/28 Vital signs: BT 35.5 C, PR 91 BPM, RR 13 BPM, BP 128/66 mmHg.",
+    "{TODAY} Vanco(peak)：28 ug/ml、Vanco(trough)：12 ug/ml, T1/2 : 10.50 hr."
+  ]
+}

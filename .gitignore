@@ -1,0 +1,8 @@
+.DS_Store
+.playwright-cli/
+work/
+references/
+output/
+*.xls
+*.xlsx
+*.docx

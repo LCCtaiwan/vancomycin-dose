@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## C-020 — 2026-08-30
+
+### Changed
+
+- 將本機最新版整合為 repository 根目錄的正式 `index.html`。
+- 恢復共同欄位、首次劑量、TDM／AUC、人工新方案、15-dose 圖表、HIS2 檢驗整理與 Pharmacy note 完整流程。
+- Pharmacy note 固定採用主管審核範本的 S/O/A/P 用詞、標點與段落，只代入藥師確認的數值。
+- 用單檔正式版本取代舊版分離式 JavaScript／CSS；舊內容仍保留在 Git 歷史。
+- 新增去識別化 golden fixtures、整合規格與隱私排除規則；院內 Excel、Word 範本、工作檔與截圖不發布。
+
+### Verification
+
+- 公式、SOAP、阻擋條件、HIS2 帶入、390 px 手機版面、console 與敏感資料檢查均通過。
+- GitHub Pages 部署狀態於 push 後確認。
+
 ## C-019 — 2026-08-08
 
 ### Changed

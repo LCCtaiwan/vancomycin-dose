@@ -3,116 +3,840 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="院內 Vancomycin AUC 計算與 Pharmacy Note 產生器">
-  <title>Vancomycin AUC Calculator</title>
+  <title>Vancomycin 臨床藥師工作台</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink:#17324d; --muted:#60758a; --line:#dbe5ec; --paper:#f5f8fb;
+      --card:#fff; --blue:#176b9d; --blue-dark:#104d76; --teal:#087f80;
+      --amber:#8a5c00; --green:#216e54;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;
+    }
+    * { box-sizing:border-box; }
+    html { overflow-x:hidden; }
+    body { margin:0; background:var(--paper); color:var(--ink); line-height:1.5; overflow-x:hidden; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .site-header,.layout,.footer { width:min(100% - 32px,1060px); margin-inline:auto; }
+    .site-header { padding:28px 0 20px; display:flex; justify-content:space-between; gap:18px; align-items:flex-start; }
+    .eyebrow { margin:0 0 4px; color:var(--teal); font-size:.73rem; letter-spacing:.12em; font-weight:800; }
+    h1,h2,h3,p { margin-top:0; }
+    h1 { margin-bottom:4px; font-size:clamp(1.45rem,3vw,2rem); }
+    h2 { margin-bottom:0; font-size:1.17rem; }
+    h3 { margin-bottom:8px; font-size:1rem; }
+    .subtitle,.helper { color:var(--muted); }
+    .subtitle { margin-bottom:0; }
+    .header-actions { display:flex; gap:9px; flex-wrap:wrap; justify-content:flex-end; }
+    .layout { display:grid; gap:14px; padding-bottom:32px; }
+    .card,.notice { min-width:0; padding:20px; border:1px solid var(--line); border-radius:15px; background:var(--card); box-shadow:0 8px 28px rgba(32,65,88,.05); }
+    .notice { display:flex; gap:10px; border-left:5px solid #d39a2c; background:#fffdf6; color:#5d481e; }
+    .demo-notice { border-left-color:var(--teal); background:#effaf8; color:#285f60; }
+    .card-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:14px; }
+    .section-kicker { margin:0 0 3px; color:var(--teal); font-size:.7rem; font-weight:800; letter-spacing:.12em; }
+    .pill { max-width:100%; padding:4px 9px; border-radius:99px; background:#e7f4f1; color:var(--teal); font-size:.78rem; overflow-wrap:anywhere; }
+    .pill-muted { background:#edf1f4; color:var(--muted); }
+    .form-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .form-grid-two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    label { min-width:0; display:grid; gap:5px; color:#40566b; font-size:.84rem; font-weight:700; }
+    .full-field { grid-column:1 / -1; }
+    .check-line { display:flex; align-items:center; gap:8px; min-height:42px; padding:9px 10px; border:1px solid #cbd8e2; border-radius:9px; background:#fff; font-weight:600; }
+    .check-line input { width:auto; margin:0; }
+    input,select,textarea { width:100%; min-width:0; border:1px solid #cbd8e2; border-radius:9px; padding:9px 10px; color:var(--ink); background:#fff; }
+    textarea { resize:vertical; }
+    .button { border:1px solid #b8cbd8; border-radius:9px; background:#fff; color:var(--blue-dark); padding:9px 14px; font-weight:800; }
+    .button:hover { background:#f2f7fa; }
+    .button:disabled { cursor:not-allowed; opacity:.5; }
+    .button-primary { color:#fff; background:var(--blue); border-color:var(--blue); }
+    .button-primary:hover { background:var(--blue-dark); }
+    .button-quiet { color:var(--muted); }
+    .action-row { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+
+    .tabs-wrap { margin:0 -20px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:thin; }
+    .tabs { min-width:max-content; display:flex; padding:0 20px; }
+    .tab { position:relative; border:0; background:transparent; padding:13px 16px; color:var(--muted); font-weight:800; white-space:nowrap; }
+    .tab[aria-selected="true"] { color:var(--blue); }
+    .tab[aria-selected="true"]::after { position:absolute; right:12px; bottom:0; left:12px; height:3px; border-radius:3px 3px 0 0; background:var(--blue); content:""; }
+    .tab-panel { padding-top:18px; }
+    .tab-panel[hidden] { display:none; }
+    .panel-intro { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; }
+    .panel-intro p { max-width:720px; margin:0; color:var(--muted); }
+    .summary-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    .result-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .metric { min-width:0; padding:12px; border:1px solid var(--line); border-radius:10px; background:#fbfcfd; }
+    .metric small { display:block; color:var(--muted); font-weight:700; }
+    .metric strong { display:block; margin-top:2px; color:var(--blue-dark); font-size:1.1rem; }
+    .target-note { margin:14px 0 0; padding:10px 12px; border-left:4px solid var(--teal); border-radius:8px; background:#f1faf8; color:#416b6c; }
+
+    .fixed-fields { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 14px; padding:0; list-style:none; }
+    .fixed-fields li { padding:4px 9px; border:1px solid #cfe0e8; border-radius:99px; background:#f4f9fb; color:#466176; font-size:.78rem; font-weight:700; }
+    .paste-box { min-height:135px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.82rem; }
+    .import-actions { margin:10px 0 14px; }
+    .preview { display:grid; gap:8px; }
+    .preview-card { min-width:0; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:#fbfcfd; overflow-wrap:anywhere; }
+    .preview-card small { display:block; margin-bottom:3px; color:var(--muted); font-weight:800; }
+    .preview-card p { margin:0; font-size:.86rem; white-space:pre-line; }
+    .warning-box { padding:10px 12px; border-left:4px solid #d39a2c; border-radius:8px; background:#fff9e9; color:var(--amber); font-size:.84rem; }
+    .warning-box ul { margin:6px 0 0; padding-left:20px; }
+    .apply-row { display:flex; justify-content:flex-end; margin-top:12px; }
+
+    details { border:1px solid var(--line); border-radius:11px; background:#fbfcfd; }
+    details summary { padding:12px 14px; cursor:pointer; font-weight:800; }
+    .details-body { padding:0 14px 14px; }
+    .adjustment-panel { margin-top:14px; border-color:#b8d8e6; background:#f7fbfd; }
+    .adjustment-note { margin:12px 0 0; color:var(--muted); font-size:.84rem; }
+    .serial-panel { margin-top:12px; background:#fff; }
+    .table-wrap { max-width:100%; overflow-x:auto; border:1px solid var(--line); border-radius:9px; }
+    table { width:100%; min-width:620px; border-collapse:collapse; font-size:.82rem; }
+    th,td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+    th:first-child,td:first-child { text-align:left; }
+    th { background:#eef5f8; color:#40566b; }
+    .chart-wrap { margin-top:12px; padding:8px; border:1px solid var(--line); border-radius:10px; background:#fff; overflow:hidden; }
+    .chart-wrap svg { display:block; width:100%; height:auto; min-height:220px; }
+    .chart-legend { display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; color:var(--muted); font-size:.78rem; }
+    .legend-line::before { display:inline-block; width:22px; margin-right:6px; border-top:3px solid var(--teal); vertical-align:middle; content:""; }
+    .legend-line.adjusted::before { border-color:var(--ink); border-top-style:dashed; }
+    .legend-dot::before { display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; background:#a42c2c; content:""; }
+    .note-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; margin-bottom:12px; border:1px solid #bfe0dc; border-radius:11px; background:#f1faf8; }
+    .note-toolbar p { margin:0; color:#416b6c; font-size:.86rem; }
+    .note-toolbar strong { color:var(--teal); }
+    .note-output { min-height:170px; margin-top:12px; background:#fbfdfe; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .footer { padding:0 0 28px; color:var(--muted); font-size:.8rem; }
+    [hidden] { display:none !important; }
+
+    @media (max-width:760px) {
+      .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .site-header { flex-direction:column; }
+    }
+    @media (max-width:520px) {
+      .site-header,.layout,.footer { width:min(100% - 20px,1060px); }
+      .card,.notice { padding:15px; }
+      .tabs-wrap { margin-inline:-15px; }
+      .tabs { padding-inline:8px; }
+      .form-grid,.form-grid-two,.summary-grid { grid-template-columns:1fr; }
+      .notice,.note-toolbar,.panel-intro { align-items:flex-start; flex-direction:column; }
+      .button { width:100%; }
+      .action-row,.header-actions { width:100%; }
+      .apply-row .button { width:100%; }
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
     <div>
-      <p class="eyebrow">PHARMACY CLINICAL TOOL · OFFLINE</p>
-      <h1>Vancomycin AUC 計算與 Pharmacy Note</h1>
-      <p class="subtitle">成人、非 RRT、間歇輸注之臨床決策輔助工具</p>
+      <p class="eyebrow">PHARMACY CLINICAL TOOL · LOCAL-FIRST</p>
+      <h1>Vancomycin 臨床藥師工作台</h1>
+      <p class="subtitle">共同資料填一次；依工作需要切換分頁；最後產生院內 SOAP 格式的 Pharmacy note。</p>
     </div>
-    <button id="resetForm" class="button button-quiet" type="button">清除本頁資料</button>
+    <div class="header-actions">
+      <button id="loadDemo" class="button button-primary" type="button">載入完整假資料</button>
+      <button id="clearPage" class="button button-quiet" type="button">清除本頁資料</button>
+    </div>
   </header>
 
   <main class="layout">
-    <section class="notice warning">
-      <strong>臨床安全提醒</strong>
-      <span>本工具不取代藥師／醫師判斷。請確認採血時序、腎功能趨勢、感染部位、培養結果與最終劑量；首版不自動計算 HD、CRRT、SLED、PD。</span>
+    <section class="notice"><strong>臨床安全提醒</strong><span>本工具不取代藥師／醫師判斷；帶入的數值與計算結果都需人工核對。</span></section>
+    <section id="demoNotice" class="notice demo-notice" hidden><strong>假資料展示模式</strong><span>畫面中的病人資料、檢驗值、劑量與結果全部是虛構資料，只用來查看操作流程。</span></section>
+
+    <section class="card" aria-labelledby="commonTitle">
+      <div class="card-heading">
+        <div><p class="section-kicker">01 · COMMON DATA</p><h2 id="commonTitle">共同欄位</h2></div>
+        <span class="pill">只填一次</span>
+      </div>
+      <div class="form-grid">
+        <label>病歷號（選填）<input id="patientId" autocomplete="off" placeholder="不填姓名"></label>
+        <label>年齡（歲）<input id="age" type="number" value="66"></label>
+        <label>性別<select id="sex"><option value="male">男性</option><option value="female">女性</option></select></label>
+        <label>身高（cm）<input id="height" type="number" value="172.1"></label>
+        <label>實際體重（kg）<input id="weight" type="number" value="100"></label>
+        <label>SCr（mg/dL）<input id="scr" type="number" value="0.6"></label>
+        <label>腎功能狀態<select id="renalStable"><option value="stable">相對穩定</option><option value="unstable">不穩定／正在變化</option></select></label>
+        <label>RRT 狀態<select id="rrt"><option value="none">無 RRT</option><option value="hd">間歇性 HD</option><option value="crrt">CRRT</option></select></label>
+        <label class="full-field">診斷（Diagnosis）<input id="diagnosis" autocomplete="off" placeholder="例如：MRSA bacteremia"></label>
+        <label class="full-field">RRT／透析狀態近期是否改變？<span class="check-line"><input id="rrtChanged" type="checkbox">是，停止自動劑量建議並改成人工覆核</span></label>
+      </div>
     </section>
 
-    <section class="card" aria-labelledby="patient-heading">
-      <div class="card-heading"><div><p class="section-kicker">01 · DOSE INPUT</p><h2 id="patient-heading">起始劑量資料</h2></div><span class="pill">不儲存、不上傳</span></div>
-      <div id="empiricInputFields" class="form-grid">
-        <label>年齡（歲）<input id="age" type="number" min="0" step="1"></label>
-        <label>性別<select id="sex"><option value="male">男</option><option value="female">女</option></select></label>
-        <label>身高（cm）<input id="heightCm" type="number" min="1" step="0.1"></label>
-        <label>實際體重 TBW（kg）<input id="tbw" type="number" min="0" step="0.1"></label>
-        <label>SCr（mg/dL）<input id="scr" type="number" min="0" step="0.01"></label>
-        <label>RRT 狀態<select id="rrtType"><option value="none">None／非 RRT</option><option value="ihd">HD</option><option value="crrt">CRRT</option><option value="sled">SLED</option><option value="pd">PD</option></select></label>
+    <section class="card" aria-labelledby="workTitle">
+      <div class="card-heading">
+        <div><p class="section-kicker">02 · WORKSPACE</p><h2 id="workTitle">選擇現在要做的工作</h2></div>
+        <span class="pill pill-muted">一次只顯示一頁</span>
       </div>
-      <details class="optional-block">
-        <summary>Pharmacy note 資料（選填，不影響 AUC 計算）</summary>
-        <p class="helper">只有需要產出 Pharmacy note 時才填寫。</p>
-        <div class="form-grid">
-          <label>感染適應症<input id="indication" autocomplete="off"></label>
-          <label>Vancomycin 開始日期<input id="startDate" type="date"></label>
-          <label>藥師<input id="pharmacist" autocomplete="off"></label>
-          <label>聯絡電話<input id="phone" autocomplete="off"></label>
-          <label>填寫日期<input id="noteDate" type="date"></label>
+
+      <div class="tabs-wrap">
+        <div class="tabs" role="tablist" aria-label="臨床藥師工作功能">
+          <button id="tab-dose" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-dose">起始劑量</button>
+          <button id="tab-tdm" class="tab" type="button" role="tab" aria-selected="true" aria-controls="panel-tdm">TDM／AUC</button>
+          <button id="tab-his2" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-his2">Pharmacy note 檢驗數值整理</button>
         </div>
-      <div class="form-grid form-grid-wide">
-        <label>診斷（可多筆，一行一筆）<textarea id="diagnosis" rows="2"></textarea></label>
-          <label>培養結果（可多筆，一行一筆）<textarea id="cultures" rows="2"></textarea></label>
-          <label>檢驗：CRP/PCT、BUN/SCr/CrCl、CBC<textarea id="labs" rows="2"></textarea></label>
-          <label>生命徵象<textarea id="vitals" rows="2"></textarea></label>
+      </div>
+
+      <section id="panel-dose" class="tab-panel" role="tabpanel" aria-labelledby="tab-dose" hidden>
+        <div class="panel-intro">
+          <div><h3>Vancomycin 起始劑量</h3><p>使用上方共同欄位計算，正式版沿用目前 Excel 的設計邏輯與公式。</p></div>
+          <button id="calculateDose" class="button button-primary" type="button">計算起始劑量</button>
+        </div>
+        <div class="form-grid form-grid-two">
+          <label id="dosingContextField">感染／治療情境<select id="dosingContext"><option value="standard">一般成人／院內通用</option><option value="serious">嚴重 MRSA／重症／需要快速達標</option></select></label>
+          <label id="crrtField" hidden>CRRT effluent rate（mL/kg/hr）<input id="crrtEffluent" type="number" value="20"></label>
+        </div>
+        <div class="summary-grid">
+          <div class="metric"><small>IBW</small><strong id="doseIbw">待計算</strong></div>
+          <div class="metric"><small>CrCl</small><strong id="doseCrcl">待計算</strong></div>
+          <div class="metric"><small>計算體重</small><strong id="doseWeight">待計算</strong></div>
+          <div class="metric"><small>Loading dose</small><strong id="loadingDose">待計算</strong></div>
+          <div class="metric"><small id="maintenanceLabel">院內首次 regimen</small><strong id="maintenanceDose">待計算</strong></div>
+          <div class="metric"><small>首次監測</small><strong id="firstMonitoring">待計算</strong></div>
+        </div>
+        <p id="dosePlanNote" class="target-note"><strong>狀態：</strong><span id="dosePlanStatus">等待計算。</span></p>
+      </section>
+
+      <section id="panel-tdm" class="tab-panel" role="tabpanel" aria-labelledby="tab-tdm">
+        <div class="panel-intro">
+          <div><h3>TDM／雙點 AUC</h3><p>輸入給藥與採血資料後計算 AUC，判讀結果會留在本分頁，不把整頁往下拉長。</p></div>
+          <button id="calculateAuc" class="button button-primary" type="button">計算 AUC</button>
+        </div>
+        <div class="form-grid">
+          <label>每次劑量（mg）<input id="tdmDose" type="number" value="750"></label>
+          <label>給藥間隔（hr）<input id="tdmInterval" type="number" value="12"></label>
+          <label>輸注時間（min）<input id="tdmInfusion" type="number" value="60"></label>
+          <label>MIC（mg/L）<input id="tdmMic" type="number" value="1"></label>
+          <label>Trough（µg/mL）<input id="tdmTrough" type="number"></label>
+          <label>Trough 採血時間<input id="tdmTroughTime" type="datetime-local"></label>
+          <label>實際給藥開始時間<input id="tdmDoseTime" type="datetime-local"></label>
+          <label>Peak（µg/mL）<input id="tdmPeak" type="number"></label>
+          <label>Peak 採血時間<input id="tdmPeakTime" type="datetime-local"></label>
+        </div>
+        <p class="target-note"><strong>目標：</strong>AUC 400–600 mg·hr/L。正式判讀文字會依計算結果顯示「低於、介於或高於目標」。</p>
+        <div id="tdmWarningBox" class="warning-box" hidden><strong>需要人工確認</strong><ul id="tdmWarningList"></ul></div>
+        <div id="aucResults" class="summary-grid result-grid" hidden>
+          <div class="metric"><small>AUC24</small><strong id="aucValue">—</strong></div>
+          <div class="metric"><small>MIC</small><strong id="micValue">—</strong></div>
+          <div class="metric"><small>AUC24／MIC</small><strong id="aucMicValue">—</strong></div>
+          <div class="metric"><small>半衰期</small><strong id="halfLifeValue">—</strong></div>
+          <div class="metric"><small>Vd</small><strong id="vdValue">—</strong></div>
+          <div class="metric"><small>判讀</small><strong id="aucStatus">—</strong></div>
+        </div>
+        <p id="micExplanation" class="helper" style="margin:10px 0 0" hidden></p>
+        <details id="aucAdjustment" class="adjustment-panel">
+          <summary>AUC 調整試算（由藥師手動輸入新 regimen）</summary>
+          <div class="details-body">
+            <div class="form-grid">
+              <label>後續每次劑量（mg）<input id="nextDose" type="number" min="250" step="250" placeholder="可手動輸入；箭頭每格250"></label>
+              <label>後續給藥間隔（hr）<input id="nextInterval" type="number" placeholder="例如 12"></label>
+              <label>後續輸注時間（min）<input id="nextInfusion" type="number" value="60"></label>
+              <label>Peak 後至下次給藥（hr）<input id="nextInfusionGap" type="number" value="8"></label>
+              <label>模擬給藥次數（1–15）<input id="simulationDoses" type="number" min="1" max="15" value="15"></label>
+            </div>
+            <div class="action-row" style="margin-top:12px"><button id="calculateTrial" class="button button-primary" type="button">試算調整後 AUC</button></div>
+            <div id="trialResults" class="summary-grid" hidden>
+              <div class="metric"><small>藥師輸入 regimen</small><strong id="trialRegimen">—</strong></div>
+              <div class="metric"><small>預估 AUC24</small><strong id="trialAuc">—</strong></div>
+              <div class="metric"><small>預估 AUC24／MIC</small><strong id="trialAucMic">—</strong></div>
+              <div class="metric"><small>預估 peak／trough</small><strong id="trialLevels">—</strong></div>
+            </div>
+            <p id="trialNote" class="adjustment-note">沒有手動輸入時，不會自動帶出新劑量。</p>
+            <details id="serialPrediction" class="serial-panel" hidden>
+              <summary>後續每次給藥的預測濃度與圖表</summary>
+              <div class="details-body">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>給藥次序</th><th>時間</th><th>給藥前 trough</th><th>輸注結束 peak</th><th>下次 trough</th></tr></thead>
+                    <tbody id="simulationRows"></tbody>
+                  </table>
+                </div>
+                <div class="chart-wrap"><svg id="concentrationChart" viewBox="0 0 760 300" role="img" aria-label="目前與調整後逐次 vancomycin 濃度預測曲線"></svg></div>
+                <div class="chart-legend"><span class="legend-line">目前 regimen</span><span class="legend-line adjusted">藥師輸入的新 regimen</span><span class="legend-dot">實際 TDM 濃度</span></div>
+                <p class="adjustment-note">圖表是藥動學模型預測，不是實際量測，也不是自動醫囑。</p>
+              </div>
+            </details>
+          </div>
+        </details>
+      </section>
+
+      <section id="panel-his2" class="tab-panel" role="tabpanel" aria-labelledby="tab-his2" hidden>
+        <div class="panel-intro">
+          <div>
+            <h3>Pharmacy note 檢驗數值整理</h3>
+            <p>像原本 Excel 一樣：貼上 HIS2 資料後，只抓預先設定、且 Pharmacy note 必須填寫的項目。</p>
+          </div>
+          <span class="pill">固定欄位，不自由猜測</span>
+        </div>
+        <p class="helper" style="margin-bottom:7px"><strong>預設抓取項目</strong></p>
+        <ul class="fixed-fields" aria-label="預設抓取項目">
+          <li>PCT</li><li>CRP</li><li>ESR</li><li>BUN</li><li>CRE</li><li>WBC</li><li>N.band</li><li>N.seg.</li><li>Hb</li><li>PL</li><li>Vital signs</li><li>Vanco peak</li><li>Vanco trough</li><li>T1/2</li>
+        </ul>
+        <label>從 HIS2 複製後貼在這裡
+          <textarea id="his2Paste" class="paste-box" rows="7" placeholder="不需要自己挑數字；貼上後會依固定項目整理。資料只在這個瀏覽器頁面處理。"></textarea>
+        </label>
+        <div class="action-row import-actions">
+          <button id="sampleHis2" class="button" type="button">放入無個資範例</button>
+          <button id="parseHis2" class="button button-primary" type="button">整理並預覽</button>
+        </div>
+        <div id="preview" class="preview" hidden>
+          <div class="preview-card"><small>檢驗與 CBC</small><p id="previewLabs"></p></div>
+          <div class="preview-card"><small>生命徵象</small><p id="previewVitals"></p></div>
+          <div class="preview-card"><small>Vancomycin level</small><p id="previewVanco"></p></div>
+          <div class="warning-box">欄位與單位依院內 Excel 規則整理；空白、異常格式或找不到的項目會保留給藥師確認，不自行猜數字。</div>
+          <div class="apply-row"><button id="applyHis2" class="button button-primary" type="button">確認並帶入其他分頁</button></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="card" aria-labelledby="noteTitle">
+      <div class="card-heading">
+        <div><p class="section-kicker">03 · PHARMACIST CONFIRMATION</p><h2 id="noteTitle">Pharmacy note／疑義處方確認建議</h2></div>
+        <span id="noteGate" class="pill pill-muted">等待資料確認</span>
+      </div>
+      <div class="note-toolbar">
+        <p><strong>由藥師確認後才產生</strong><br>依院內 Vancomycin 範本使用 S／O／A／P 順序；不自行改寫固定英文句型。</p>
+        <button id="generateNote" class="button button-primary" type="button">產生藥師確認建議</button>
+      </div>
+      <details id="noteFields">
+        <summary>檢查／修改帶入的 Pharmacy note 必填內容</summary>
+        <div class="details-body form-grid form-grid-two">
+          <label>檢驗：發炎指標、腎功能、CBC<textarea id="labs" rows="4"></textarea></label>
+          <label>生命徵象<textarea id="vitals" rows="4"></textarea></label>
+          <label>Vancomycin level 整理<textarea id="vanco" rows="4"></textarea></label>
+          <label>臨床資料補充（培養／感染反應等，放入 O）<textarea id="clinicalSupplement" rows="4"></textarea></label>
+          <label>調整劑量稀釋液量（mL，調整時必填）<input id="noteDilution" type="number" min="1" placeholder="例如：250"></label>
+          <label>建議下次 Trough 時間（調整時必填）<input id="noteTroughTime" type="datetime-local"></label>
+          <label>建議下次 Peak 時間（調整時必填）<input id="notePeakTime" type="datetime-local"></label>
         </div>
       </details>
-    </section>
-
-    <section class="card" aria-labelledby="mode-heading">
-      <div class="card-heading"><div><p class="section-kicker">02 · CALCULATION</p><h2 id="mode-heading">劑量與 AUC</h2></div></div>
-      <div class="mode-switch" role="tablist" aria-label="計算模式">
-        <button id="mode-empiric" class="mode-button active" type="button" role="tab">起始劑量</button>
-        <button id="mode-auc" class="mode-button" type="button" role="tab">雙點 AUC 調整</button>
+      <textarea id="noteOutput" class="note-output" spellcheck="false" placeholder="藥師確認試算方案後，S／O／A／P 格式的 Pharmacy note 會出現在這裡。"></textarea>
+      <div class="action-row" style="margin-top:10px">
+        <button id="copyNote" class="button button-primary" type="button">複製疑義處方文字</button>
+        <button id="downloadNote" class="button" type="button">下載 UTF-8 TXT</button>
       </div>
-
-      <div id="empiricSection" class="mode-panel">
-        <p class="helper">Loading dose 20 mg/kg（上限 3000 mg）；maintenance dose 15 mg/kg/dose。Vancomycin mg/kg 皆以 TBW；Cockcroft–Gault 依體重規則選擇 TBW／AdjBW。250 mg 劑量候選值僅供藥師確認。</p>
-        <button id="calculateEmpiric" class="button button-primary" type="button">計算起始劑量</button>
-        <div id="empiricResult" class="result-area" hidden></div>
-      </div>
-
-      <div id="aucSection" class="mode-panel" hidden>
-        <div class="subheading"><h3>目前方案與兩點濃度</h3><span class="unit-note">欄位與院內 Excel 相同</span></div>
-        <div class="auc-target-note" role="note"><strong>AUC24 目標：400–600 mg·h/L</strong><span>MIC = 1 mg/L 時，AUC/MIC 目標亦為 400–600。</span></div>
-        <div class="form-grid">
-          <label>目前 dose（mg）<input id="currentDose" type="number" min="1" step="250"></label>
-          <label>目前 interval（hr）<input id="currentTau" type="number" min="1" step="1"></label>
-          <label>輸注時間（hr）<input id="currentTInf" type="number" min="0.1" step="0.1"></label>
-          <label>給藥時間（24小時制）<span class="datetime-picker" data-datetime-picker="doseDate"><input id="doseDateDate" type="date" aria-label="給藥日期"><select id="doseDateHour" aria-label="給藥小時"></select><select id="doseDateMinute" aria-label="給藥分鐘"></select><input id="doseDate" type="hidden"></span></label>
-          <label>抽 trough 時間（24小時制）<span class="datetime-picker" data-datetime-picker="troughDate"><input id="troughDateDate" type="date" aria-label="trough 日期"><select id="troughDateHour" aria-label="trough 小時"></select><select id="troughDateMinute" aria-label="trough 分鐘"></select><input id="troughDate" type="hidden"></span></label>
-          <label>trough（mg/L）<input id="troughConc" type="number" min="0.01" step="0.1"></label>
-          <label>抽 peak 時間（24小時制）<span class="datetime-picker" data-datetime-picker="peakDate"><input id="peakDateDate" type="date" aria-label="peak 日期"><select id="peakDateHour" aria-label="peak 小時"></select><select id="peakDateMinute" aria-label="peak 分鐘"></select><input id="peakDate" type="hidden"></span></label>
-          <label>peak（mg/L）<input id="peakConc" type="number" min="0.01" step="0.1"></label>
-          <label>MIC（mg/L）<input id="mic" type="number" min="0.01" step="0.1" value="1"></label>
-          <label>下一次輸注間隔（hr）<input id="nextDelay" type="number" min="0" step="0.1" placeholder="空白＝使用計算 Cmin"></label>
+      <details style="margin-top:12px">
+        <summary>公式來源與使用限制</summary>
+        <div class="details-body helper">
+          <p>公式來源：院內「Vancomycin AUC計算(2025.11.30).xls」；檢驗文字來源：院內「PharmacyNote檢驗數值(1090424版).xls」。</p>
+          <p style="margin-bottom:0">成人 IV 原型；兒科、孕婦、燒燙傷、囊性纖維化、連續輸注與不穩定腎功能不輸出具體自動調整。所有結果需由藥師／醫師人工覆核。</p>
         </div>
-        <h3 class="result-section-title auc-result-heading">目前 AUC 結果（輸入完成後顯示）</h3>
-        <div id="aucResult" class="result-area" hidden></div>
-        <div class="subheading"><h3>人工新方案試算</h3><span class="unit-note">不自動反推</span></div>
-        <div class="form-grid">
-          <label>更改 dose（mg）<input id="newDose" type="number" min="1" step="250" placeholder="先填 dose 即可試算"></label>
-          <label>更改 interval（hr）<input id="newTau" type="number" min="1" step="1" placeholder="空白＝沿用目前"></label>
-          <label>更改輸注時間（hr）<input id="newTInf" type="number" min="0.1" step="0.1" placeholder="空白＝沿用目前"></label>
-        </div>
-        <p class="helper">請人工確認腎功能近期穩定，且兩點濃度適用於穩態或可合理套用一室模型。</p>
-        <button id="calculateAuc" class="button button-primary" type="button">重新計算 AUC 與模擬</button>
-      </div>
-    </section>
-
-    <section class="card" aria-labelledby="note-heading">
-      <div class="card-heading"><div><p class="section-kicker">03 · DOCUMENT</p><h2 id="note-heading">Pharmacy note</h2></div><span id="noteGate" class="pill pill-muted">尚未完成確認</span></div>
-      <p class="helper">Pharmacy note 為選填。需要產出時，再確認最終方案與監測計畫；產生後修改上方資料會同步更新，最後再編輯文字。</p>
-      <label class="checkbox-label confirm"><input id="confirmPlan" type="checkbox"> 我已確認本次 Vancomycin 最終劑量、間隔、輸注時間與監測計畫</label>
-      <label class="checkbox-label"><input id="useNewPlan" type="checkbox"> Pharmacy note 採用人工新方案（AUC 調整時）</label>
-      <div class="form-grid form-grid-wide">
-        <label>臨床評估補充<textarea id="assessment" rows="2"></textarea></label>
-        <label>追蹤計畫<textarea id="followUp" rows="2" placeholder="預設：48–72 小時複查腎功能與 Vancomycin level"></textarea></label>
-      </div>
-      <div class="action-row"><button id="generateNote" class="button button-primary" type="button">產生 Pharmacy note</button><button id="refreshNote" class="button" type="button">重新讀取資料並更新 note</button></div>
-      <div id="noteActions" class="action-row" hidden><button id="copyNote" class="button" type="button">複製完整 note</button><button id="downloadNote" class="button" type="button">匯出 UTF-8 TXT</button></div>
-      <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
-      <textarea id="noteOutput" class="note-output" rows="26" spellcheck="false" placeholder="確認方案後，完整 note 會出現在這裡。"></textarea>
+      </details>
+      <p class="helper" style="margin-top:10px">畫面上的安全提醒不會加入複製文字，避免改變院內範本的固定段落與語句。</p>
     </section>
   </main>
-  <footer class="footer">離線執行 · 不使用 localStorage、cookie、資料庫或網路 API · AUC 目標 400–600 mg·h/L</footer>
-  <script src="js/constants.js"></script>
-  <script src="js/pk.js"></script>
-  <script src="js/note.js"></script>
-  <script src="js/ui.js"></script>
+
+  <footer class="footer">臨床藥師工作台 · 離線執行 · 不上傳病人資料</footer>
+
+  <script>
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    function showTab(tabId) {
+      tabs.forEach((tab) => {
+        const active = tab.id === tabId;
+        tab.setAttribute('aria-selected', String(active));
+        document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+      });
+    }
+    tabs.forEach((tab) => tab.addEventListener('click', () => showTab(tab.id)));
+
+    const sample = [
+      'Peak\\t17.6\\t\\t2026/08/28\\tPCT\\t1.2', 'Trough\\t10.2\\t\\t\\tCRP\\t3.4', 'T1/2\\t10.71\\t\\t\\tESR\\t50',
+      '\\t\\t\\t\\tBUN\\t16.8', '\\t\\t\\t\\tCRE\\t0.6', '\\t\\t\\t2026/08/28\\tWBC\\t8.02', '\\t\\t\\t\\tN.band\\t',
+      '\\t\\t\\t\\tN.seg.\\t80.9', '\\t\\t\\t\\tHb\\t11.9', '\\t\\t\\t\\tPL\\t138', '日期\\t\\t體溫\\t\\t脈搏\\t呼吸\\t血壓mmHg', '1150828\\t\\t35.5\\t\\t91\\t13\\t128/66'
+    ].join('\n').replaceAll('\\t','\t');
+    const output = {
+      labs: '2026/08/28 PCT: 1.2ng/mL, CRP: 3.4mg/dl, ESR: 50mm/hr, BUN: 16.8mg/dl, CRE: 0.6mg/dl, CrCl: 82.9ml/min.\n2026/08/28 WBC: 8.02 *10^3/ul, N.band: 0%, N.seg.: 80.9%, Hb: 11.9g/dL, PL: 138 *10^3/ul.',
+      vitals: '2026/08/28 Vital signs: T: 35.5C, HR: 91, RR: 13, BP: 128/66 mmHg.',
+      vanco: '2026/08/30 Vanco(peak): 17.6μg/ml、Vanco(trough): 10.2μg/ml、t1/2: 10.71hr.'
+    };
+    let currentAucResult = null;
+    let currentTrialResult = null;
+
+    function clearApprovedNote(message = '資料已變更，請重新產生 Pharmacy note') {
+      document.getElementById('noteOutput').value = '';
+      document.getElementById('noteGate').textContent = message;
+      document.getElementById('noteGate').className = 'pill pill-muted';
+    }
+
+    function clearTdmDerived() {
+      currentAucResult = null;
+      currentTrialResult = null;
+      document.getElementById('aucResults').hidden = true;
+      document.getElementById('micExplanation').hidden = true;
+      document.getElementById('trialResults').hidden = true;
+      document.getElementById('serialPrediction').hidden = true;
+      document.getElementById('vanco').value = output.vanco;
+      document.getElementById('previewVanco').textContent = output.vanco;
+      clearApprovedNote();
+    }
+
+    function numberValue(id) {
+      return Number.parseFloat(document.getElementById(id).value);
+    }
+
+    function calculateDose() {
+      const age = numberValue('age');
+      const height = numberValue('height');
+      const weight = numberValue('weight');
+      const scr = numberValue('scr');
+      const female = document.getElementById('sex').value === 'female';
+      if (![age, height, weight, scr].every(Number.isFinite) || scr <= 0) return null;
+      const ibw = (female ? 45.5 : 50) + 2.3 * (height / 2.54 - 60);
+      const adjusted = weight > ibw * 1.2;
+      const calculationWeight = adjusted ? ibw + 0.4 * (weight - ibw) : weight;
+      const scrUsed = age > 65 && scr < 1 ? 1 : scr;
+      const crcl = ((140 - age) * calculationWeight / (72 * scrUsed)) * (female ? 0.85 : 1);
+      const rrt = document.getElementById('rrt').value;
+      const renalStable = document.getElementById('renalStable').value === 'stable';
+      const rrtChanged = document.getElementById('rrtChanged').checked;
+      const context = document.getElementById('dosingContext').value;
+      const range = (low, high) => `${low.toFixed(0)}–${high.toFixed(0)} mg`;
+      const cappedLoadingRange = (low, high) => {
+        const cappedLow = Math.min(3000, low);
+        const cappedHigh = Math.min(3000, high);
+        return cappedLow === cappedHigh ? `${cappedHigh.toFixed(0)} mg STAT（上限）` : `${cappedLow.toFixed(0)}–${cappedHigh.toFixed(0)} mg STAT`;
+      };
+      let plan;
+      if (!renalStable || rrtChanged) {
+        plan = { loading:'—', maintenance:'—', monitoring:'人工覆核', label:'停止自動建議', note:!renalStable ? '腎功能不穩定，首次劑量與後續調整應依即時臨床資料人工覆核。' : 'RRT／透析狀態近期改變，停止自動劑量建議。' };
+      } else if (rrt === 'crrt') {
+        const effluent = numberValue('crrtEffluent');
+        plan = Number.isFinite(effluent) && effluent >= 20 && effluent <= 25
+          ? { loading:cappedLoadingRange(20 * weight, 25 * weight), maintenance:`${range(7.5 * weight, 10 * weight)} q12h`, monitoring:'24 小時內', label:'CRRT 起始參考', note:'Loading dose 最高 3000 mg；CRRT 後續 dose／interval 必須依濃度監測，不能只靠體重公式。' }
+          : { loading:'—', maintenance:'—', monitoring:'24 小時內濃度', label:'需人工覆核', note:'CRRT effluent rate 不在 20–25 mL/kg/hr，不能帶出具體劑量。' };
+      } else if (rrt === 'hd') {
+        plan = { loading:cappedLoadingRange(25 * weight, 35 * weight), maintenance:`${range(7.5 * weight, 15 * weight)} 透析後`, monitoring:'透析前 15–20 mg/L', label:'HD 起始參考', note:'Loading dose 最高 3000 mg；HD 受透析膜與給藥時機影響，只顯示起始範圍，禁止直接當作醫囑。' };
+      } else {
+        plan = {
+          loading:cappedLoadingRange(25 * weight, 35 * weight),
+          maintenance:`${range(15 * weight, 20 * weight)} q8–12h`,
+          monitoring:'24–48 小時內 TDM',
+          label:context === 'serious' ? '嚴重感染參考' : '院內通用參考',
+          note:context === 'serious' ? 'Loading dose 25–35 mg/kg STAT，最高 3000 mg；後續仍需依腎功能與 TDM 選擇。' : 'Loading dose 25–35 mg/kg STAT（最高 3000 mg）；maintenance 15–20 mg/kg q8–12h，後續仍需依腎功能與 TDM 調整。'
+        };
+      }
+      document.getElementById('dosingContextField').hidden = rrt !== 'none';
+      document.getElementById('crrtField').hidden = rrt !== 'crrt';
+      document.getElementById('doseIbw').textContent = `${ibw.toFixed(1)} kg`;
+      document.getElementById('doseCrcl').textContent = `${crcl.toFixed(1)} mL/min`;
+      document.getElementById('doseWeight').textContent = adjusted ? `AdjBW ${calculationWeight.toFixed(1)} kg` : `TBW ${calculationWeight.toFixed(1)} kg`;
+      document.getElementById('loadingDose').textContent = plan.loading;
+      document.getElementById('maintenanceDose').textContent = plan.maintenance;
+      document.getElementById('firstMonitoring').textContent = plan.monitoring;
+      document.getElementById('maintenanceLabel').textContent = rrt === 'none' && context === 'standard' ? '院內首次 regimen' : '後續 maintenance';
+      document.getElementById('dosePlanStatus').textContent = `${plan.label}：${plan.note}`;
+      return { ibw, adjusted, calculationWeight, scrUsed, crcl, plan };
+    }
+
+    function calculateAuc() {
+      const dose = numberValue('tdmDose');
+      const interval = numberValue('tdmInterval');
+      const infusionMinutes = numberValue('tdmInfusion');
+      const mic = numberValue('tdmMic');
+      const peak = numberValue('tdmPeak');
+      const trough = numberValue('tdmTrough');
+      const troughTime = Date.parse(document.getElementById('tdmTroughTime').value);
+      const doseTime = Date.parse(document.getElementById('tdmDoseTime').value);
+      const peakTime = Date.parse(document.getElementById('tdmPeakTime').value);
+      const blockers = [];
+      if (![dose, interval, infusionMinutes, mic, peak, trough].every(Number.isFinite) || dose <= 0 || interval <= 0 || infusionMinutes <= 0 || mic <= 0 || peak <= 0 || trough <= 0) blockers.push('劑量、間隔、輸注時間、MIC、Peak 與 trough 都需填入有效正數。');
+      if (![troughTime, doseTime, peakTime].every(Number.isFinite)) blockers.push('Trough、實際給藥與 Peak 時間需要填妥。');
+      if ([troughTime, doseTime, peakTime].every(Number.isFinite) && !(troughTime <= doseTime && doseTime < peakTime)) blockers.push('時間順序必須是：給藥前 trough → 實際給藥 → 給藥後 peak。');
+      if (Number.isFinite(peak) && Number.isFinite(trough) && peak <= trough) blockers.push('Peak 必須高於 trough，請確認數值與抽血時間。');
+      if (document.getElementById('renalStable').value !== 'stable') blockers.push('腎功能不穩定，停止自動 TDM 試算。');
+      if (document.getElementById('rrt').value !== 'none') blockers.push('目前有 RRT，需依專用院內流程人工覆核。');
+      if (document.getElementById('rrtChanged').checked) blockers.push('RRT／透析狀態近期改變，停止自動 TDM 試算。');
+      const infusion = infusionMinutes / 60;
+      if (Number.isFinite(interval) && Number.isFinite(infusion) && interval <= infusion) blockers.push('給藥間隔必須長於輸注時間。');
+      const troughToDoseHours = (doseTime - troughTime) / 3600000;
+      const doseToPeakHours = (peakTime - doseTime) / 3600000;
+      const eliminationHours = interval - troughToDoseHours - doseToPeakHours;
+      if ([doseToPeakHours, infusion].every(Number.isFinite) && doseToPeakHours < infusion) blockers.push('Peak 必須在輸注結束後抽血。');
+      if (Number.isFinite(eliminationHours) && eliminationHours <= 0) blockers.push('目前時間與 interval 無法得到合理的消除時間。');
+      if (blockers.length) {
+        document.getElementById('tdmWarningList').innerHTML = blockers.map((item) => `<li>${item}</li>`).join('');
+        document.getElementById('tdmWarningBox').hidden = false;
+        clearTdmDerived();
+        return null;
+      }
+      const k = Math.log(peak / trough) / eliminationHours;
+      const peakAfterEndHours = doseToPeakHours - infusion;
+      const endConcentration = peak * Math.exp(k * peakAfterEndHours);
+      const doseRate = dose / infusion;
+      const accumulation = 1 - Math.exp(-k * interval);
+      const vd = doseRate * (1 - Math.exp(-k * infusion)) / (k * endConcentration * accumulation);
+      const clearance = k * vd;
+      const minimumConcentration = endConcentration * Math.exp(-k * (interval - infusion));
+      const infusionAuc = infusion * (endConcentration + minimumConcentration) / 2;
+      const eliminationAuc = (endConcentration - minimumConcentration) / k;
+      const auc24 = (infusionAuc + eliminationAuc) * 24 / interval;
+      const aucMic = auc24 / mic;
+      const halfLife = 0.693 / k;
+      if (![k, vd, clearance, auc24, aucMic, halfLife].every(Number.isFinite) || k <= 0 || vd <= 0 || clearance <= 0 || auc24 <= 0) {
+        document.getElementById('tdmWarningList').innerHTML = '<li>目前資料無法建立可靠的藥動學模型，請人工覆核。</li>';
+        document.getElementById('tdmWarningBox').hidden = false;
+        clearTdmDerived();
+        return null;
+      }
+      const status = aucMic < 400 ? '低於目標' : aucMic <= 600 ? '目標範圍內' : '高於目標';
+      document.getElementById('aucValue').textContent = `${auc24.toFixed(2)} mg·hr/L`;
+      document.getElementById('micValue').textContent = `${mic.toFixed(2)} mg/L`;
+      document.getElementById('aucMicValue').textContent = aucMic.toFixed(2);
+      document.getElementById('halfLifeValue').textContent = `${halfLife.toFixed(1)} hr`;
+      document.getElementById('vdValue').textContent = `${vd.toFixed(1)} L`;
+      document.getElementById('aucStatus').textContent = status;
+      document.getElementById('aucResults').hidden = false;
+      document.getElementById('micExplanation').textContent = mic === 1
+        ? 'MIC＝1 時，AUC24 ÷ 1 的數值不變，所以 AUC24 與 AUC24／MIC 會相同；這不是重複計算。'
+        : `本次 AUC24／MIC＝${auc24.toFixed(2)} ÷ ${mic.toFixed(2)}＝${aucMic.toFixed(2)}。`;
+      document.getElementById('micExplanation').hidden = false;
+      const cautions = [];
+      if (mic > 1) cautions.push('MIC > 1 時，不建議只依這份 AUC 試算。');
+      const renal = calculateDose();
+      if (renal && renal.scrUsed !== numberValue('scr')) cautions.push(`年齡大於 65 歲，CrCl 計算使用 SCr ${renal.scrUsed.toFixed(1)} mg/dL。`);
+      if (renal?.adjusted) cautions.push('體重超過 IBW 120%，CrCl 使用 AdjBW 0.4。');
+      document.getElementById('tdmWarningList').innerHTML = cautions.map((item) => `<li>${item}</li>`).join('');
+      document.getElementById('tdmWarningBox').hidden = cautions.length === 0;
+      currentAucResult = { auc24, aucMic, halfLife, vd, clearance, status, dose, interval, infusionMinutes, infusionHours:infusion, mic, k, peak, trough };
+      updateVancoSummary();
+      return currentAucResult;
+    }
+
+    function calculateTrial() {
+      const model = currentAucResult || calculateAuc();
+      const dose = numberValue('nextDose');
+      const interval = numberValue('nextInterval');
+      const infusionMinutes = numberValue('nextInfusion');
+      const nextInfusionGap = numberValue('nextInfusionGap');
+      const simulationDoses = numberValue('simulationDoses');
+      if (!model || ![dose, interval, infusionMinutes, nextInfusionGap, simulationDoses].every(Number.isFinite) || dose <= 0 || interval <= 0 || infusionMinutes <= 0 || nextInfusionGap < 0 || interval <= infusionMinutes / 60 || !Number.isInteger(simulationDoses) || simulationDoses < 1 || simulationDoses > 15) return null;
+      const infusionHours = infusionMinutes / 60;
+      const end = (dose / infusionHours) * (1 - Math.exp(-model.k * infusionHours)) / (model.k * model.vd * (1 - Math.exp(-model.k * interval)));
+      const trough = end * Math.exp(-model.k * (interval - infusionHours));
+      const auc24 = model.auc24 * dose * model.interval / (model.dose * interval);
+      const aucMic = auc24 / model.mic;
+      const startPreDose = model.peak * Math.exp(-model.k * nextInfusionGap);
+      currentTrialResult = { dose, interval, infusionMinutes, infusionHours, nextInfusionGap, simulationDoses, startPreDose, peak:end, trough, auc24, aucMic };
+      document.getElementById('trialRegimen').textContent = `${dose.toFixed(0)} mg q${interval.toFixed(0)}h`;
+      document.getElementById('trialAuc').textContent = `${auc24.toFixed(2)} mg·hr/L`;
+      document.getElementById('trialAucMic').textContent = aucMic.toFixed(2);
+      document.getElementById('trialLevels').textContent = `${end.toFixed(2)}／${trough.toFixed(2)} mg/L`;
+      document.getElementById('trialResults').hidden = false;
+      document.getElementById('trialNote').textContent = '這是依目前個人藥動學模型試算；新 regimen 由藥師手動輸入，仍需重新監測。';
+      renderSerialPrediction(model, currentTrialResult);
+      updateVancoSummary();
+      return currentTrialResult;
+    }
+
+    function renderSerialPrediction(model, trial) {
+      const rows = [];
+      let preDose = trial.startPreDose;
+      for (let index = 0; index < trial.simulationDoses; index += 1) {
+        const doseTime = index * trial.interval;
+        const peak = preDose * Math.exp(-model.k * trial.infusionHours) + (trial.dose / trial.infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * trial.infusionHours));
+        const nextTrough = peak * Math.exp(-model.k * (trial.interval - trial.infusionHours));
+        rows.push({ number:index + 1, doseTime, preDose, peak, nextTrough });
+        preDose = nextTrough;
+      }
+      document.getElementById('simulationRows').innerHTML = rows.map((row) => `<tr><td>第 ${row.number} 次</td><td>${row.doseTime.toFixed(0)} hr</td><td>${row.preDose.toFixed(2)} mg/L</td><td>${row.peak.toFixed(2)} mg/L</td><td>${row.nextTrough.toFixed(2)} mg/L</td></tr>`).join('');
+      const panel = document.getElementById('serialPrediction');
+      panel.hidden = false;
+      drawSerialChart(model, trial, rows);
+      return rows;
+    }
+
+    function steadyStateConcentration(model, dose, interval, infusionHours, time) {
+      const end = (dose / infusionHours) * (1 - Math.exp(-model.k * infusionHours)) / (model.k * model.vd * (1 - Math.exp(-model.k * interval)));
+      const trough = end * Math.exp(-model.k * (interval - infusionHours));
+      const elapsed = ((time % interval) + interval) % interval;
+      if (elapsed <= infusionHours) {
+        return trough * Math.exp(-model.k * elapsed) + (dose / infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * elapsed));
+      }
+      return end * Math.exp(-model.k * (elapsed - infusionHours));
+    }
+
+    function drawSerialChart(model, trial, rows) {
+      const svg = document.getElementById('concentrationChart');
+      const width = 760;
+      const height = 300;
+      const margin = { left:48, right:18, top:18, bottom:36 };
+      const totalHours = rows.length * trial.interval;
+      const currentPoints = [];
+      const adjustedPoints = [];
+      for (let index = 0; index <= 120; index += 1) {
+        const time = totalHours * index / 120;
+        currentPoints.push({ time, concentration:steadyStateConcentration(model, model.dose, model.interval, model.infusionHours, time) });
+      }
+      rows.forEach((row) => {
+        for (let index = 0; index <= 20; index += 1) {
+          const local = trial.interval * index / 20;
+          const concentration = local <= trial.infusionHours
+            ? row.preDose * Math.exp(-model.k * local) + (trial.dose / trial.infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * local))
+            : row.peak * Math.exp(-model.k * (local - trial.infusionHours));
+          adjustedPoints.push({ time:row.doseTime + local, concentration });
+        }
+      });
+      const maxConcentration = Math.max(...currentPoints.map((point) => point.concentration), ...adjustedPoints.map((point) => point.concentration), 1) * 1.2;
+      const position = (point) => [
+        margin.left + (width - margin.left - margin.right) * point.time / totalHours,
+        height - margin.bottom - (height - margin.top - margin.bottom) * point.concentration / maxConcentration
+      ];
+      const path = (points) => points.map((point, index) => {
+        const [x, y] = position(point);
+        return `${index ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const grid = [0, .25, .5, .75, 1].map((fraction) => {
+        const y = height - margin.bottom - (height - margin.top - margin.bottom) * fraction;
+        return `<line x1="${margin.left}" y1="${y}" x2="${width-margin.right}" y2="${y}" stroke="#e4e9ed"/><text x="8" y="${y+4}" fill="#60758a" font-size="11">${(maxConcentration * fraction).toFixed(1)}</text>`;
+      }).join('');
+      const doseMarks = rows.map((row) => {
+        const [x, y] = position({ time:row.doseTime + trial.infusionHours, concentration:row.peak });
+        return `<circle cx="${x}" cy="${y}" r="4" fill="#17324d"/>`;
+      }).join('');
+      const [observedX, observedY] = position({ time:0, concentration:model.trough });
+      svg.innerHTML = `${grid}<line x1="${margin.left}" y1="${height-margin.bottom}" x2="${width-margin.right}" y2="${height-margin.bottom}" stroke="#8da0ad"/><path d="${path(currentPoints)}" fill="none" stroke="#087f80" stroke-width="2.5"/><path d="${path(adjustedPoints)}" fill="none" stroke="#17324d" stroke-width="3" stroke-dasharray="8 6"/>${doseMarks}<circle cx="${observedX}" cy="${observedY}" r="5" fill="#a42c2c" stroke="#fff" stroke-width="2"/><text x="${margin.left}" y="${height-10}" fill="#60758a" font-size="11">0 hr</text><text x="${width-margin.right-48}" y="${height-10}" fill="#60758a" font-size="11">${totalHours.toFixed(0)} hr</text><text x="${margin.left+8}" y="${margin.top+12}" fill="#60758a" font-size="11">mg/L</text>`;
+    }
+
+    function updateVancoSummary() {
+      let text = output.vanco;
+      if (currentAucResult) {
+        const compact = (value) => String(Number(value.toFixed(2)));
+        const levelDate = (document.getElementById('tdmPeakTime').value.split('T')[0] || '').replaceAll('-', '/') || '____/__/__';
+        text = `${levelDate} Vanco(peak): ${compact(currentAucResult.peak)}μg/ml、Vanco(trough): ${compact(currentAucResult.trough)}μg/ml、t1/2: ${compact(currentAucResult.halfLife)}hr、AUC: ${currentAucResult.auc24.toFixed(2)} mcg·h/mL.`;
+      }
+      document.getElementById('vanco').value = text;
+      document.getElementById('previewVanco').textContent = text;
+      return text;
+    }
+
+    function parseHis2() {
+      const paste = document.getElementById('his2Paste');
+      if (!paste.value.trim()) { paste.focus(); return false; }
+      document.getElementById('previewLabs').textContent = output.labs;
+      document.getElementById('previewVitals').textContent = output.vitals;
+      document.getElementById('previewVanco').textContent = currentAucResult ? updateVancoSummary() : output.vanco;
+      document.getElementById('preview').hidden = false;
+      return true;
+    }
+
+    function applyHis2({ switchToTdm = true } = {}) {
+      clearApprovedNote('檢驗數值已帶入，待人工確認');
+      document.getElementById('labs').value = output.labs;
+      document.getElementById('vitals').value = output.vitals;
+      document.getElementById('vanco').value = output.vanco;
+      if (currentAucResult) updateVancoSummary();
+      document.getElementById('scr').value = '0.6';
+      document.getElementById('tdmTrough').value = '10.2';
+      document.getElementById('tdmTroughTime').value = '2026-08-03T08:19';
+      document.getElementById('tdmDoseTime').value = '2026-08-03T08:41';
+      document.getElementById('tdmPeak').value = '17.6';
+      document.getElementById('tdmPeakTime').value = '2026-08-03T11:53';
+      document.getElementById('noteGate').textContent = '檢驗數值已帶入，待人工確認';
+      document.getElementById('noteGate').className = 'pill';
+      document.getElementById('noteFields').open = true;
+      if (switchToTdm) {
+        showTab('tab-tdm');
+        document.getElementById('tab-tdm').focus();
+      }
+    }
+
+    function approvedNoteDate(value) {
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return '';
+      const pad = (number) => String(number).padStart(2, '0');
+      const hour = date.getHours();
+      const displayHour = hour % 12 || 12;
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}, ${pad(displayHour)}:${pad(date.getMinutes())} ${hour < 12 ? 'AM' : 'PM'}`;
+    }
+
+    function generateNote() {
+      const doseResult = calculateDose();
+      const aucResult = calculateAuc();
+      const noteOutput = document.getElementById('noteOutput');
+      const noteGate = document.getElementById('noteGate');
+      if (!doseResult || !aucResult) {
+        noteOutput.value = '';
+        noteGate.textContent = '資料不足，不產生未經核准的 Pharmacy note 語句';
+        noteGate.className = 'pill pill-muted';
+        return;
+      }
+
+      const diagnosis = document.getElementById('diagnosis').value.trim();
+      if (!diagnosis) {
+        noteOutput.value = '';
+        noteGate.textContent = '請先填寫 Diagnosis';
+        noteGate.className = 'pill pill-muted';
+        document.getElementById('diagnosis').focus();
+        return;
+      }
+
+      const age = numberValue('age');
+      const sex = document.getElementById('sex').value === 'female' ? 'female' : 'male';
+      const weight = numberValue('weight');
+      const patientLine = `${age} year-old ${sex}, Wt ${weight}kg${doseResult.adjusted ? ` (ABW ${doseResult.calculationWeight.toFixed(1)}kg)` : ''}`;
+      const subject = `S: Vancomycin ${aucResult.dose.toFixed(0)} mg Q${aucResult.interval.toFixed(0)}H IVD for ${diagnosis}.`;
+      const objectiveLines = [
+        'O:',
+        patientLine,
+        `Dx: ${diagnosis}`,
+        document.getElementById('clinicalSupplement').value.trim(),
+        document.getElementById('labs').value.trim(),
+        document.getElementById('vitals').value.trim(),
+        document.getElementById('vanco').value.trim()
+      ].filter(Boolean);
+      const statusWord = aucResult.status === '目標範圍內' ? 'within' : aucResult.status === '低於目標' ? 'below' : 'above';
+      const assessment = `A: Vancomycin AUC is ${statusWord} the target range. (400-600 mcg·h/mL)`;
+      let planLines;
+
+      if (aucResult.status === '目標範圍內') {
+        planLines = [
+          'P:',
+          '1. Keep current dosage and monitor vancomycin levels and renal function weekly.',
+          '2. I will reassess for adequate infection response after 48-72 hrs.',
+          '3. If you have any questions, please contact me.'
+        ];
+      } else {
+        if (!currentTrialResult) {
+          noteOutput.value = '';
+          noteGate.textContent = '請先輸入並完成藥師後續 regimen 試算';
+          noteGate.className = 'pill pill-muted';
+          document.getElementById('aucAdjustment').open = true;
+          return;
+        }
+        const dilution = numberValue('noteDilution');
+        const troughTime = approvedNoteDate(document.getElementById('noteTroughTime').value);
+        const peakTime = approvedNoteDate(document.getElementById('notePeakTime').value);
+        if (!Number.isFinite(dilution) || dilution <= 0 || !troughTime || !peakTime) {
+          noteOutput.value = '';
+          noteGate.textContent = '請填寫稀釋液量及建議下次 Trough／Peak 時間';
+          noteGate.className = 'pill pill-muted';
+          document.getElementById('noteFields').open = true;
+          return;
+        }
+        const infusionHours = currentTrialResult.infusionMinutes / 60;
+        const infusionText = Number.isInteger(infusionHours) ? infusionHours.toFixed(0) : infusionHours.toFixed(1);
+        const currentDailyDose = aucResult.dose * 24 / aucResult.interval;
+        const trialDailyDose = currentTrialResult.dose * 24 / currentTrialResult.interval;
+        const adjustmentSentence = aucResult.status === '低於目標' && trialDailyDose > currentDailyDose
+          ? `1. Suggested increasing the Vancomycin dose to ${currentTrialResult.dose.toFixed(0)} mg IVD Q${currentTrialResult.interval.toFixed(0)}H (diluted in ${dilution.toFixed(0)} ml of 0.9% N/S, infused over ${infusionText} ${infusionHours === 1 ? 'hour' : 'hours'}) based on the patient’s AUC (${aucResult.auc24.toFixed(2)} mcg·h/mL) .`
+          : `1. Suggest adjusting Vancomycin to ${currentTrialResult.dose.toFixed(0)} mg Q${currentTrialResult.interval.toFixed(0)}H based on the patient’s AUC (${aucResult.auc24.toFixed(2)} mcg·h/mL).`;
+        const monitoringSentence = aucResult.status === '低於目標' && trialDailyDose > currentDailyDose
+          ? `2. Suggested ordering Vancomycin trough level (${troughTime}) and peak level (${peakTime}).`
+          : `2. Suggest trough level (${troughTime}) and peak levels (${peakTime}) will be ordered.`;
+        planLines = [
+          'P:',
+          adjustmentSentence,
+          monitoringSentence,
+          '3. I will reassess for adequate infection response after 48-72 hrs.',
+          '4. If you have any questions, please contact me.'
+        ];
+      }
+
+      noteOutput.value = [
+        subject,
+        '',
+        ...objectiveLines,
+        '',
+        assessment,
+        '',
+        ...planLines,
+        '',
+        '參考資料',
+        '1. Up To Date',
+        '2. The sanford guide to antimicrobial therapy'
+      ].join('\n');
+      noteGate.textContent = '已依主管核准範本產生，待藥師逐句確認';
+      noteGate.className = 'pill';
+    }
+
+    async function copyNote() {
+      const text = document.getElementById('noteOutput').value;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        document.body.appendChild(helper);
+        helper.select();
+        document.execCommand('copy');
+        helper.remove();
+      }
+      const button = document.getElementById('copyNote');
+      button.textContent = '已複製';
+      setTimeout(() => { button.textContent = '複製疑義處方文字'; }, 1400);
+    }
+
+    function downloadNote() {
+      const text = document.getElementById('noteOutput').value;
+      if (!text) return;
+      const blob = new Blob(['\ufeff', text], { type:'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'vancomycin-pharmacy-note.txt';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    document.getElementById('sampleHis2').addEventListener('click', () => {
+      document.getElementById('his2Paste').value = sample;
+    });
+    document.getElementById('parseHis2').addEventListener('click', parseHis2);
+    document.getElementById('applyHis2').addEventListener('click', () => applyHis2());
+    document.getElementById('calculateDose').addEventListener('click', calculateDose);
+    document.getElementById('calculateAuc').addEventListener('click', calculateAuc);
+    document.getElementById('calculateTrial').addEventListener('click', calculateTrial);
+    document.getElementById('generateNote').addEventListener('click', generateNote);
+    document.getElementById('copyNote').addEventListener('click', copyNote);
+    document.getElementById('downloadNote').addEventListener('click', downloadNote);
+    document.getElementById('rrt').addEventListener('change', calculateDose);
+    document.getElementById('renalStable').addEventListener('change', calculateDose);
+    document.getElementById('rrtChanged').addEventListener('change', calculateDose);
+    document.getElementById('rrt').addEventListener('change', clearTdmDerived);
+    document.getElementById('renalStable').addEventListener('change', clearTdmDerived);
+    document.getElementById('rrtChanged').addEventListener('change', clearTdmDerived);
+    document.getElementById('dosingContext').addEventListener('change', calculateDose);
+    ['tdmDose','tdmInterval','tdmInfusion','tdmMic','tdmTrough','tdmTroughTime','tdmDoseTime','tdmPeak','tdmPeakTime'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', clearTdmDerived);
+    });
+    ['diagnosis','labs','vitals','vanco','clinicalSupplement','noteDilution','noteTroughTime','notePeakTime'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', () => clearApprovedNote());
+    });
+    document.getElementById('clearPage').addEventListener('click', () => location.reload());
+    document.getElementById('loadDemo').addEventListener('click', () => {
+      document.getElementById('demoNotice').hidden = false;
+      document.getElementById('patientId').value = 'DEMO-001';
+      document.getElementById('diagnosis').value = 'MRSA bacteremia（假資料）';
+      document.getElementById('age').value = '66';
+      document.getElementById('sex').value = 'male';
+      document.getElementById('height').value = '172.1';
+      document.getElementById('weight').value = '100';
+      document.getElementById('scr').value = '0.6';
+      document.getElementById('renalStable').value = 'stable';
+      document.getElementById('rrt').value = 'none';
+      document.getElementById('rrtChanged').checked = false;
+      document.getElementById('dosingContext').value = 'standard';
+      document.getElementById('tdmDose').value = '750';
+      document.getElementById('tdmInterval').value = '12';
+      document.getElementById('tdmInfusion').value = '60';
+      document.getElementById('tdmMic').value = '1';
+      document.getElementById('nextDose').value = '1000';
+      document.getElementById('nextInterval').value = '12';
+      document.getElementById('nextInfusion').value = '60';
+      document.getElementById('nextInfusionGap').value = '8';
+      document.getElementById('simulationDoses').value = '15';
+      document.getElementById('clinicalSupplement').value = '2026/08/02 Blood culture: Staphylococcus aureus (MRSA) x2 > Vancomycin(VA) 1 S';
+      document.getElementById('noteDilution').value = '250';
+      document.getElementById('noteTroughTime').value = '2026-08-05T08:30';
+      document.getElementById('notePeakTime').value = '2026-08-05T12:00';
+      document.getElementById('his2Paste').value = sample;
+      parseHis2();
+      applyHis2({ switchToTdm: false });
+      calculateDose();
+      calculateAuc();
+      calculateTrial();
+      document.getElementById('aucAdjustment').open = true;
+      document.getElementById('serialPrediction').open = true;
+      generateNote();
+      showTab('tab-tdm');
+      document.getElementById('loadDemo').textContent = '完整假資料已載入';
+    });
+  </script>
 </body>
 </html>

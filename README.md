@@ -1,47 +1,32 @@
-# Vancomycin AUC 與 Pharmacy Note 產生器
+# Vancomycin 臨床藥師工作台
 
-院內成人 Vancomycin 臨床決策輔助工具。支援經驗起始劑量、雙點一室模型 AUC 計算、人工新方案試算，以及 Pharmacy note 複製與 TXT 匯出。
+成人靜脈注射 vancomycin 的離線臨床藥師決策支援原型。
 
-## 適用範圍
+## 功能
 
-- 成人（18 歲以上）、間歇輸注、非腎替代療法。
-- AUC/MIC 目標 400–600，MIC 預設 1 mg/L。
-- Loading dose 20 mg/kg TBW（上限 3000 mg）；maintenance 15 mg/kg/dose TBW。
-- 僅供臨床決策輔助，所有方案須由藥師或醫師覆核。
+- 共同欄位、首次劑量、校正體重與 Cockcroft–Gault CrCl。
+- 依 trough → 實際給藥 → peak 的時序計算 AUC24／MIC。
+- 由藥師手動試算後續 regimen，顯示預測 AUC、peak、trough、15-dose 表格與濃度圖。
+- 貼上 HIS2 固定檢驗項目，自動整理 Pharmacy note 檢驗文字。
+- 依主管審核通過的固定 S/O/A/P 句型產生 Pharmacy note／疑義處方建議。
+- 複製與 UTF-8 TXT 匯出；資料不足或時序不合理時阻擋輸出。
 
 ## 使用方式
 
-直接開啟 `index.html`，或在專案目錄執行：
+直接開啟 `index.html`，或使用 GitHub Pages。這是單一 HTML 檔，不需要安裝套件、建置或連線到後端。
 
-```bash
-python3 -m http.server 8000
-```
+## 資料與隱私
 
-然後開啟 `http://localhost:8000/`。
+- 網頁不會上傳、長期儲存或寫入 `localStorage`。
+- 公式來源的院內 Excel 與主管審核的 Word 範本只保存在本機，不放進公開 repository。
+- Repository 只保留去識別化的測試資料。
+- 這是臨床決策輔助，不是醫囑、處方或院內 protocol 的替代品。
 
-## GitHub Pages
+## 專案文件
 
-公開使用網址：<https://lcctaiwan.github.io/vancomycin-dose/>
-
-## 測試
-
-```bash
-node --test js/pk.test.js js/note.test.js
-```
-
-## 重要路徑
-
-- `js/pk.js`：劑量與 PK/AUC 純函式。
-- `js/note.js`：Pharmacy note 純文字模板。
-- `js/ui.js`：表單、狀態、AUC 濃度圖表、逐次比較、複製與 TXT 匯出。
-- `docs/develog.md`：決策與驗證紀錄。
-
-本工具不使用 localStorage、Cookie、資料庫或遠端 API，重新整理即清除輸入資料。
-
-工具不要求輸入病人姓名、病歷號、病房、主治醫師、住院日期或轉入日期；請在院內既有系統或 note 表頭處理病人識別資訊。
-
-## AUC 輸入方式
-
-AUC 頁面依院內 Excel 保留單一的給藥時間、trough 時間與 peak 時間欄位；日期用日曆點選，小時使用 `00–23`、分鐘使用 `00–59` 選擇，不顯示上午／下午。輸入完整欄位後會自動計算目前／人工新方案的連續濃度曲線、15-dose peak/trough 與逐次比較表。
-
-輸出欄位同步包含 trough 到 peak 時間、預計給藥前血中濃度、New AUC、Predicted Peak 與 Predicted Trough。
+- `SPEC.md`：凍結需求、公式、固定文字與驗收條件。
+- `PROGRESS.md`：目前停點與下一步。
+- `CHANGELOG.md`：每次變更摘要。
+- `docs/develog.md`：開發決策與驗證證據。
+- `docs/his2-import-spec.md`：HIS2 固定檢驗項目的整理規格。
+- `docs/pharmacy-note-template-analysis.md`：主管審核範本的去識別化結構分析。

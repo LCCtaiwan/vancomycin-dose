@@ -2,13 +2,13 @@
 
 ## Current Goal
 
-完成 C-019：將已清理的 Vancomycin AUC／Pharmacy note 工具安全發布至既有 GitHub repository 與 GitHub Pages。
+完成 C-020：將本機最新版整合為正式單檔工作台，安全發布至既有 GitHub repository 與 GitHub Pages。
 
 ## Stack And Run Commands
 
-- Stack: HTML, CSS, classic JavaScript; no build step and no runtime dependency.
+- Stack: 單一 `index.html`（內嵌 CSS 與 classic JavaScript）；無 build step、後端或 runtime dependency。
 - Run: `python3 -m http.server 8000`
-- Unit tests: `node --test js/pk.test.js js/note.test.js`
+- Verification: 去識別化 golden fixtures、瀏覽器互動測試、手機版面與敏感資料掃描。
 
 ## Important Project Rules
 
@@ -20,12 +20,9 @@
 
 ## SDD
 
-- `constants.js`: 集中管理臨床常數、單位與 RRT 列舉。
-- `pk.js`: 無 DOM 的純函式；支援瀏覽器與 CommonJS。
-- `note.js`: 將結構化資料轉成可編輯純文字 note。
-- `ui.js`: 表單讀寫、AUC 濃度圖表與 15-dose 比較、確認 gate、clipboard 與下載。
-- `ui.js`: Pharmacy note 產生後的來源欄位同步；若 note 已被直接編輯則保留人工文字。
-- `pk.test.js` / `note.test.js`: golden、邊界與 snapshot 驗證。
+- `index.html`: 共同欄位、首次劑量、TDM／AUC、HIS2 整理、15-dose 圖表與 Pharmacy note 的正式離線單檔。
+- `tests/fixtures/`: 去識別化公式與主管審核文字 golden fixtures。
+- `SPEC.md`: 凍結需求、來源優先順序、公式、固定文字與驗收條件。
 
 ## Completed Work
 
@@ -67,15 +64,16 @@
 
 ## Current Checkpoint
 
-- Implementation artifact is ready for local clinical review；目前不包含尚未確認的 HIS2／Excel 檢驗值匯入原型。已發布至 `LCCtaiwan/vancomycin-dose`，公開網址為 `https://lcctaiwan.github.io/vancomycin-dose/`。
-- Screenshots saved under `output/playwright/desktop.png` and `output/playwright/mobile.png`.
-- Handover database search was attempted but unavailable because its SQLite database could not be opened; local project records are the source of truth.
+- C-020 以本機最新版取代舊版公開頁面，正式版入口改為 repository 根目錄 `index.html`。
+- HIS2 固定檢驗整理已依本機 Excel 邏輯納回；Pharmacy note 固定文字以主管審核 Word 範本為最高來源。
+- 院內 Excel、Word、病人資料、工作檔與測試截圖均留在本機，未加入公開發布內容。
+- 本次發布前需通過公式、SOAP golden text、阻擋條件、手機版面、console 與敏感資料掃描。
 
 ## Recommended Next Step
 
-1. 由院內藥師使用去識別化病例逐欄驗證 Excel 對應的 AUC 輸入、輸出、濃度圖表與 note 欄位。
-2. 驗證精簡 note 的英文句型、監測日期與院內工作流程。
-3. 臨床 sign-off 後再標記 v0.1.0。
+1. 完成 C-020 發布前測試並推送 `main`。
+2. 確認 GitHub Pages 顯示本機最新版。
+3. 由院內藥師使用去識別化病例做 clinical sign-off。
 
 ## Verification Status
 
@@ -85,4 +83,5 @@
 - C-014 note linkage gate: pass（產生後修改感染適應症會同步更新輸出；Node 9/9）。
 - C-018 cleanup gate: pass；Node 9/9、AUC 頁面 smoke test、匯入控制不存在且 console errors 0。
 - C-019 Pages gate: pass；遠端 `index.html` SHA 與發布版本一致，Pages URL HTTP 200。
+- C-020 integration gate: pass；AUC 349.67／new AUC 466.22、三種 AUC 判讀、15-dose、SOAP 逐字、HIS2 帶入、必填阻擋、390 px 與敏感資料掃描均通過，console 0 errors／warnings。
 - Clinical gate: pending（院內藥師 pass/revise/reject）。
