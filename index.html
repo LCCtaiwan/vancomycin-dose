@@ -240,6 +240,14 @@
             <details id="serialPrediction" class="serial-panel" hidden>
               <summary>後續每次給藥的預測濃度與圖表</summary>
               <div class="details-body">
+                <p><strong>保持目前 regimen</strong></p>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>給藥次序</th><th>時間</th><th>給藥前 trough</th><th>輸注結束 peak</th><th>下次 trough</th></tr></thead>
+                    <tbody id="currentSimulationRows"></tbody>
+                  </table>
+                </div>
+                <p><strong>藥師輸入的新 regimen</strong></p>
                 <div class="table-wrap">
                   <table>
                     <thead><tr><th>給藥次序</th><th>時間</th><th>給藥前 trough</th><th>輸注結束 peak</th><th>下次 trough</th></tr></thead>
@@ -248,7 +256,7 @@
                 </div>
                 <div class="chart-wrap"><svg id="concentrationChart" viewBox="0 0 760 300" role="img" aria-label="目前與調整後逐次 vancomycin 濃度預測曲線"></svg></div>
                 <div class="chart-legend"><span class="legend-line">目前 regimen</span><span class="legend-line adjusted">藥師輸入的新 regimen</span><span class="legend-dot">實際 TDM 濃度</span></div>
-                <p class="adjustment-note">圖表是藥動學模型預測，不是實際量測，也不是自動醫囑。</p>
+                <p class="adjustment-note">兩方案各以第 1 次模擬給藥為 0 小時，比較相對時間，並非同一實際給藥時間軸。目前方案以實測 trough 為起始濃度；新方案以本次 peak 衰減至下次給藥的濃度起算。紅點標示目前方案採用的實測 trough。圖表是藥動學模型預測，不是自動醫囑。</p>
               </div>
             </details>
           </div>
@@ -355,13 +363,22 @@
 
     function clearTdmDerived() {
       currentAucResult = null;
-      currentTrialResult = null;
+      clearTrialDerived();
       document.getElementById('aucResults').hidden = true;
       document.getElementById('micExplanation').hidden = true;
-      document.getElementById('trialResults').hidden = true;
-      document.getElementById('serialPrediction').hidden = true;
       document.getElementById('vanco').value = output.vanco;
       document.getElementById('previewVanco').textContent = output.vanco;
+      clearApprovedNote();
+    }
+
+    function clearTrialDerived() {
+      currentTrialResult = null;
+      document.getElementById('trialResults').hidden = true;
+      document.getElementById('serialPrediction').hidden = true;
+      document.getElementById('currentSimulationRows').innerHTML = '';
+      document.getElementById('simulationRows').innerHTML = '';
+      document.getElementById('concentrationChart').innerHTML = '';
+      document.getElementById('trialNote').textContent = '請完成有效的新方案輸入後重新試算。';
       clearApprovedNote();
     }
 
@@ -454,6 +471,7 @@
         clearTdmDerived();
         return null;
       }
+      // Excel 工作表1 B14:B23: retain the source trapezoidal AUC method.
       const k = Math.log(peak / trough) / eliminationHours;
       const peakAfterEndHours = doseToPeakHours - infusion;
       const endConcentration = peak * Math.exp(k * peakAfterEndHours);
@@ -504,7 +522,10 @@
       const infusionMinutes = numberValue('nextInfusion');
       const nextInfusionGap = numberValue('nextInfusionGap');
       const simulationDoses = numberValue('simulationDoses');
-      if (!model || ![dose, interval, infusionMinutes, nextInfusionGap, simulationDoses].every(Number.isFinite) || dose <= 0 || interval <= 0 || infusionMinutes <= 0 || nextInfusionGap < 0 || interval <= infusionMinutes / 60 || !Number.isInteger(simulationDoses) || simulationDoses < 1 || simulationDoses > 15) return null;
+      if (!model || ![dose, interval, infusionMinutes, nextInfusionGap, simulationDoses].every(Number.isFinite) || dose <= 0 || interval <= 0 || infusionMinutes <= 0 || nextInfusionGap < 0 || interval <= infusionMinutes / 60 || !Number.isInteger(simulationDoses) || simulationDoses < 1 || simulationDoses > 15) {
+        clearTrialDerived();
+        return null;
+      }
       const infusionHours = infusionMinutes / 60;
       const end = (dose / infusionHours) * (1 - Math.exp(-model.k * infusionHours)) / (model.k * model.vd * (1 - Math.exp(-model.k * interval)));
       const trough = end * Math.exp(-model.k * (interval - infusionHours));
@@ -523,54 +544,53 @@
       return currentTrialResult;
     }
 
-    function renderSerialPrediction(model, trial) {
+    function predictSerialConcentrations(model, regimen, preDose, count) {
       const rows = [];
-      let preDose = trial.startPreDose;
-      for (let index = 0; index < trial.simulationDoses; index += 1) {
-        const doseTime = index * trial.interval;
-        const peak = preDose * Math.exp(-model.k * trial.infusionHours) + (trial.dose / trial.infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * trial.infusionHours));
-        const nextTrough = peak * Math.exp(-model.k * (trial.interval - trial.infusionHours));
+      // Excel B30:P31 and B39:P40 share this recurrence; only the initial level differs.
+      for (let index = 0; index < count; index += 1) {
+        const doseTime = index * regimen.interval;
+        const peak = preDose * Math.exp(-model.k * regimen.infusionHours) + (regimen.dose / regimen.infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * regimen.infusionHours));
+        const nextTrough = peak * Math.exp(-model.k * (regimen.interval - regimen.infusionHours));
         rows.push({ number:index + 1, doseTime, preDose, peak, nextTrough });
         preDose = nextTrough;
       }
-      document.getElementById('simulationRows').innerHTML = rows.map((row) => `<tr><td>第 ${row.number} 次</td><td>${row.doseTime.toFixed(0)} hr</td><td>${row.preDose.toFixed(2)} mg/L</td><td>${row.peak.toFixed(2)} mg/L</td><td>${row.nextTrough.toFixed(2)} mg/L</td></tr>`).join('');
-      const panel = document.getElementById('serialPrediction');
-      panel.hidden = false;
-      drawSerialChart(model, trial, rows);
       return rows;
     }
 
-    function steadyStateConcentration(model, dose, interval, infusionHours, time) {
-      const end = (dose / infusionHours) * (1 - Math.exp(-model.k * infusionHours)) / (model.k * model.vd * (1 - Math.exp(-model.k * interval)));
-      const trough = end * Math.exp(-model.k * (interval - infusionHours));
-      const elapsed = ((time % interval) + interval) % interval;
-      if (elapsed <= infusionHours) {
-        return trough * Math.exp(-model.k * elapsed) + (dose / infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * elapsed));
-      }
-      return end * Math.exp(-model.k * (elapsed - infusionHours));
+    function renderSerialPrediction(model, trial) {
+      const rows = predictSerialConcentrations(model, trial, trial.startPreDose, trial.simulationDoses);
+      const currentRows = predictSerialConcentrations(model, model, model.trough, trial.simulationDoses);
+      const tableRows = (values) => values.map((row) => `<tr><td>第 ${row.number} 次</td><td>${Number(row.doseTime.toFixed(2))} hr</td><td>${row.preDose.toFixed(2)} mg/L</td><td>${row.peak.toFixed(2)} mg/L</td><td>${row.nextTrough.toFixed(2)} mg/L</td></tr>`).join('');
+      document.getElementById('currentSimulationRows').innerHTML = tableRows(currentRows);
+      document.getElementById('simulationRows').innerHTML = tableRows(rows);
+      const panel = document.getElementById('serialPrediction');
+      panel.hidden = false;
+      drawSerialChart(model, trial, rows, currentRows);
+      return rows;
     }
 
-    function drawSerialChart(model, trial, rows) {
+    function serialChartPoints(model, regimen, rows) {
+      return rows.flatMap((row) => {
+        // Include the exact infusion end so every plotted peak agrees with the table.
+        const times = [...new Set([0, regimen.infusionHours, regimen.interval,
+          ...Array.from({ length:21 }, (_, index) => regimen.interval * index / 20)])].sort((a, b) => a - b);
+        return times.map((local) => ({
+          time:row.doseTime + local,
+          concentration:local <= regimen.infusionHours
+            ? row.preDose * Math.exp(-model.k * local) + (regimen.dose / regimen.infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * local))
+            : row.peak * Math.exp(-model.k * (local - regimen.infusionHours))
+        }));
+      });
+    }
+
+    function drawSerialChart(model, trial, rows, currentRows) {
       const svg = document.getElementById('concentrationChart');
       const width = 760;
       const height = 300;
       const margin = { left:48, right:18, top:18, bottom:36 };
-      const totalHours = rows.length * trial.interval;
-      const currentPoints = [];
-      const adjustedPoints = [];
-      for (let index = 0; index <= 120; index += 1) {
-        const time = totalHours * index / 120;
-        currentPoints.push({ time, concentration:steadyStateConcentration(model, model.dose, model.interval, model.infusionHours, time) });
-      }
-      rows.forEach((row) => {
-        for (let index = 0; index <= 20; index += 1) {
-          const local = trial.interval * index / 20;
-          const concentration = local <= trial.infusionHours
-            ? row.preDose * Math.exp(-model.k * local) + (trial.dose / trial.infusionHours) / (model.vd * model.k) * (1 - Math.exp(-model.k * local))
-            : row.peak * Math.exp(-model.k * (local - trial.infusionHours));
-          adjustedPoints.push({ time:row.doseTime + local, concentration });
-        }
-      });
+      const totalHours = Math.max(rows.length * trial.interval, currentRows.length * model.interval);
+      const currentPoints = serialChartPoints(model, model, currentRows);
+      const adjustedPoints = serialChartPoints(model, trial, rows);
       const maxConcentration = Math.max(...currentPoints.map((point) => point.concentration), ...adjustedPoints.map((point) => point.concentration), 1) * 1.2;
       const position = (point) => [
         margin.left + (width - margin.left - margin.right) * point.time / totalHours,
@@ -647,6 +667,8 @@
     function generateNote() {
       const doseResult = calculateDose();
       const aucResult = calculateAuc();
+      // Re-evaluate dependent cells before using a proposed regimen in the note.
+      calculateTrial();
       const noteOutput = document.getElementById('noteOutput');
       const noteGate = document.getElementById('noteGate');
       if (!doseResult || !aucResult) {
@@ -794,6 +816,9 @@
     document.getElementById('dosingContext').addEventListener('change', calculateDose);
     ['tdmDose','tdmInterval','tdmInfusion','tdmMic','tdmTrough','tdmTroughTime','tdmDoseTime','tdmPeak','tdmPeakTime'].forEach((id) => {
       document.getElementById(id).addEventListener('input', clearTdmDerived);
+    });
+    ['nextDose','nextInterval','nextInfusion','nextInfusionGap','simulationDoses'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', clearTrialDerived);
     });
     ['diagnosis','labs','vitals','vanco','clinicalSupplement','noteDilution','noteTroughTime','notePeakTime'].forEach((id) => {
       document.getElementById(id).addEventListener('input', () => clearApprovedNote());
