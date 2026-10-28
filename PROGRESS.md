@@ -1,5 +1,26 @@
 # PROGRESS
 
+## C-022 — 2026-10-28
+
+- 狀態：既有 draft 分支修復，待 code review 與可用瀏覽器環境驗收；未合併、未部署。
+- 真解析與預覽、空白初始輸入、note 快照及匯出回饋已實作。
+- 四套 Node/VM 測試通過；462 項合成 Excel 比較最大絕對差約 2.804e-9。
+- Browser E2E 未執行：Chromium 啟動被 socket 權限阻擋；正式 escalation 又遭 execution wrapper read-only filesystem 錯誤。沒有嘗試繞過。
+- 仍需去識別化的實際 HIS2 原始貼上格式與重現輸出，以及院內 clinical sign-off。
+- 詳見 docs/repair-2026-10-28.md；下列保留歷史紀錄。
+
+
+## C-021 — 2026-09-09
+
+- 使用者授權以院內 AUC Excel 修正公式差異。
+- 已修正目前方案由穩態曲線取代 Excel 逐劑推算的差異，補上目前方案濃度表與圖表端點。
+- 已修正新方案輸入失效仍沿用舊結果，note 產生前重算相依結果。
+- `node tests/excel-formulas.cjs` 通過；使用合成資料及原有公開 demo，不提交院內來源檔案。
+- 交付方式：獨立分支與 draft PR；main／GitHub Pages 待審閱合併。
+- 瀏覽器實際版面待確認：本環境缺少 Chromium 執行檔；數值與相依重算測試已通過。
+- 已知未處理項目：MIC 判讀與 AUC note 語意、HIS2 固定範例值、首次劑量腎功能限制及 SCr 規則。這些不是本次 Excel 公式差異修改的範圍。
+- 以下保留 C-020 歷史紀錄。
+
 ## Current Status
 
 - Change ID: C-020
