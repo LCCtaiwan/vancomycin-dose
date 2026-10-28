@@ -1,5 +1,15 @@
 # PROGRESS
 
+## C-022 — 2026-10-28
+
+- 狀態：既有 draft 分支修復，待 code review 與可用瀏覽器環境驗收；未合併、未部署。
+- 真解析與預覽、空白初始輸入、note 快照及匯出回饋已實作。
+- 四套 Node/VM 測試通過；462 項合成 Excel 比較最大絕對差約 2.804e-9。
+- Browser E2E 未執行：Chromium 啟動被 socket 權限阻擋；正式 escalation 又遭 execution wrapper read-only filesystem 錯誤。沒有嘗試繞過。
+- 仍需去識別化的實際 HIS2 原始貼上格式與重現輸出，以及院內 clinical sign-off。
+- 詳見 docs/repair-2026-10-28.md；下列保留歷史紀錄。
+
+
 ## C-021 — 2026-09-09
 
 - 使用者授權以院內 AUC Excel 修正公式差異。

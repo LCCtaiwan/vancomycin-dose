@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "testedIndexSha256": "e5e5620b81389a3249f2c9465226355ffd078fd111288274143ea896bbe39451",
+  "comparisons": 462,
+  "maxAbsoluteError": 2.8040858524036594e-9,
+  "maxRelativeError": 1.1641498876002743e-10,
+  "cases": [
+    {
+      "case": "same_day",
+      "status": "PASS",
+      "numericFormulaChecks": 77
+    },
+    {
+      "case": "midnight",
+      "status": "PASS",
+      "numericFormulaChecks": 77
+    },
+    {
+      "case": "peak_before_trough",
+      "status": "EXPECTED_BLOCK",
+      "reason": "UI supports trough → infusion → peak; workbook also contains a separate peak-before-trough branch."
+    },
+    {
+      "case": "half_hour_infusion",
+      "status": "PASS",
+      "numericFormulaChecks": 77
+    },
+    {
+      "case": "mic_two",
+      "status": "PASS",
+      "numericFormulaChecks": 77
+    },
+    {
+      "case": "changed_interval",
+      "status": "PASS",
+      "numericFormulaChecks": 77
+    },
+    {
+      "case": "fractional_times",
+      "status": "PASS",
+      "numericFormulaChecks": 77
+    }
+  ]
+}
