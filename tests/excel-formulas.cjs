@@ -80,5 +80,5 @@ element('loadDemo').listeners.click[0]();
 element('nextDose').value = '1250';
 run('generateNote()');
 assert.equal(run('currentTrialResult.dose'), 1250);
-assert.ok(element('noteOutput').value.includes('1250 mg'));
+assert.ok(element('noteOutput').value.includes('1250 mg'), 'reviewed fixed mode uses manually trialled regimen');
 console.log('PASS: demo, 15-dose current/new recurrence, chart endpoints, invalidation and note recalculation.');

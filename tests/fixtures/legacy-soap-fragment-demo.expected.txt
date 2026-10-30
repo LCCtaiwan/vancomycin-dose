@@ -1,0 +1,22 @@
+S: Vancomycin 750 mg Q12H IVD for MRSA bacteremia（假資料）.
+
+O:
+66 year-old male, Wt 100kg (ABW 80.7kg)
+Dx: MRSA bacteremia（假資料）
+2026/08/02 Blood culture: Staphylococcus aureus (MRSA) x2 > Vancomycin(VA) 1 S
+2026/08/28 PCT: 1.2ng/mL, CRP: 3.4mg/dl, ESR: 50mm/hr, BUN: 16.8mg/dl, CRE: 0.6mg/dl, CrCl: 82.9ml/min.
+2026/08/28 WBC: 8.02 *10^3/ul, N.band: 0%, N.seg.: 80.9%, Hb: 11.9g/dL, PL: 138 *10^3/ul.
+2026/08/28 Vital signs: T: 35.5C, HR: 91, RR: 13, BP: 128/66 mmHg.
+2026/08/03 Vanco(peak): 17.6μg/ml、Vanco(trough): 10.2μg/ml、t1/2: 10.71hr、AUC: 349.67 mcg·h/mL.
+
+A: Vancomycin AUC is below the target range. (400-600 mcg·h/mL)
+
+P:
+1. Suggested increasing the Vancomycin dose to 1000 mg IVD Q12H (diluted in 250 ml of 0.9% N/S, infused over 1 hour) based on the patient’s AUC (349.67 mcg·h/mL) .
+2. Suggested ordering Vancomycin trough level (2026/08/05, 08:30 AM) and peak level (2026/08/05, 12:00 PM).
+3. I will reassess for adequate infection response after 48-72 hrs.
+4. If you have any questions, please contact me.
+
+參考資料
+1. Up To Date
+2. The sanford guide to antimicrobial therapy

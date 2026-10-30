@@ -98,3 +98,29 @@ element('loadDemo').listeners.click[0]();element('height').value='50';assert.equ
 for (const id of ['doseIbw','doseCrcl','doseWeight','loadingDose','maintenanceDose','firstMonitoring']) assert.equal(element(id).textContent,'—');
 // Regimen display must match exact values used by the model and note.
 element('loadDemo').listeners.click[0]();element('nextDose').value='1000.5';element('nextInterval').value='12.5';run('calculateTrial()');assert.equal(element('trialRegimen').textContent,'1000.5 mg q12.5h');
+
+// Current 1090427 report-date and A:I vital layouts fail closed, not re-labelled as collection data.
+const reportRows = [
+ ['', '', '檢體名稱', '報告日期', '檢驗項目', '檢驗報告', '單位'],
+ ['', '', 'SYN BLOOD', '2026/01/02', 'CRE', '1', 'mg/dL'],
+ ['', '', '檢體名稱', '報告日期', '檢驗項目', '檢驗報告', '單位'],
+ ['', '', '', '', 'WBC', '0', '*10^3/uL']
+];
+value=parse(reportRows.map(row=>row.join('\t')).join('\n'),'fixed');
+assert.equal(value.canApply,false);assert.equal(value.records.length,0);assert.match(value.errors.join(' '),/報告日期不是採血日期/);
+value=parse([['時間','體溫','部位','脈搏','呼吸','血壓','血壓位','疼痛','SpO2(%)'],['1234','36','SYN','80','16','120/80','SYN','0','99']].map(r=>r.join('\t')).join('\n'),'fixed');
+assert.equal(value.canApply,false);assert.equal(value.vitals.length,0);assert.match(value.errors.join(' '),/A:I/);
+value=parse([['','','','2026/01/02','BUN','20'],['','','','採血日期','檢驗項目','結果'],['','','','','CRE','1']].map(r=>r.join('\t')).join('\n'),'fixed');
+assert.equal(value.canApply,false);assert.match(value.errors.join(' '),/缺少有效採血日期/);assert.ok(!value.records.some(r=>r.name==='CRE'));
+console.log('PASS: 1090427 report-date/A:I layouts rejected and fixed-date carry reset at repeated headers.');
+
+// Explicit current-workbook mode: source-aware preview, selected note-only import.
+const h109=['','','檢體名稱','報告日期','檢驗項目','檢驗報告','單位','標準(低)','標準(高)','報告者'];
+const current109=[h109,['','','SYN BLOOD','2026/01/02','CRE','1','mg/dl','0.5','1.5','SYN REPORTER'],['','','','','N.band','0','%','0','5',''],['時間','體溫','部位','脈搏','呼吸','血壓','血壓位','疼痛','SpO2(%)'],['1234','36','SYN SITE','80','16','120/80','SYN POS','0','99']].map(r=>r.join('\t')).join('\n');
+value=parse(current109,'workbook1090427');assert.equal(value.canApply,true);assert.match(value.labs,/報告日期：2026\/01\/02；CRE: 1 mg\/dl/);assert.match(value.labs,/報告日期：未提供；N.band: 0 %/);assert.match(value.vitalText,/觀測日期未提供.*1234/);assert.doesNotMatch(value.labs,/SYN REPORTER/);
+element('pharmacyAllowDateCarry').checked=true;value=parse(current109,'workbook1090427');assert.match(value.labs,/2026\/01\/02（同表區沿用）；N.band: 0 %/);element('pharmacyAllowDateCarry').checked=false;
+element('his2Paste').value=current109;element('his2Format').value='workbook1090427';element('scr').value='9';element('tdmPeak').value='88';element('tdmPeakTime').value='2026-01-01T10:00';element('tdmTroughTime').value='2026-01-01T06:00';
+assert.equal(run('parseHis2()'),true);element('his2Reviewed').checked=true;element('pharmacyLabSelection').selectedOptions=[];assert.equal(run('applyHis2()'),false);
+element('pharmacyLabSelection').selectedOptions=[{value:'lab-2'},{value:'lab-3'},{value:'vital-5'}];assert.equal(run('applyHis2()'),true);
+assert.equal(element('scr').value,'9');assert.equal(element('tdmPeak').value,'88');assert.equal(element('tdmPeakTime').value,'2026-01-01T10:00');assert.equal(element('tdmTroughTime').value,'2026-01-01T06:00');assert.match(element('labs').value,/N.band: 0 %/);assert.doesNotMatch(element('labs').value,/SYN REPORTER/);assert.match(element('vitals').value,/SpO2\(%\): 99/);
+console.log('PASS: 1090427 explicit selected note-only integration, report-date semantics, blank dates, optional carry, raw vitals, no reporter and no SCr/TDM mutation.');

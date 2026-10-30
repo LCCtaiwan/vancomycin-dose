@@ -267,7 +267,7 @@
         <div class="panel-intro">
           <div>
             <h3>Pharmacy note 檢驗數值整理</h3>
-            <p>像原本 Excel 一樣：貼上 HIS2 資料後，只抓預先設定、且 Pharmacy note 必須填寫的項目。</p>
+            <p>貼上目前 Excel／HIS2 資料，核對日期來源、原始單位與缺值，再選取需要放入 Pharmacy note 的項目。</p>
           </div>
           <span class="pill">固定欄位，不自由猜測</span>
         </div>
@@ -275,8 +275,9 @@
         <ul class="fixed-fields" aria-label="預設抓取項目">
           <li>PCT</li><li>CRP</li><li>ESR</li><li>BUN</li><li>CRE</li><li>WBC</li><li>N.band</li><li>N.seg.</li><li>Hb</li><li>PL</li><li>Vital signs</li><li>Vanco peak</li><li>Vanco trough</li><li>T1/2</li>
         </ul>
-        <label>貼上格式<select id="his2Format"><option value="fixed">固定 Excel A–G 格式（保留空白 Tab）</option><option value="table">欄名 TSV：採血時間／檢驗項目／結果／單位</option></select></label>
-        <p class="helper">僅支援以上兩種格式；尚未驗收所有 HIS2 剪貼版型。固定格式以院內 Excel 單位解讀；一般 TSV 需明列單位與實際採血日期／時間，不接受報告時間代替。請勿貼姓名、病歷號等識別資料。同一病例可補資料；新病例請先按「清除本頁資料」。</p>
+        <label>貼上格式<select id="his2Format"><option value="workbook1090427">目前 PharmacyNote 1090427（A:J／C:J 與 A:I 生命徵象）</option><option value="fixed">固定 Excel A–G 格式（保留空白 Tab）</option><option value="table">欄名 TSV：採血時間／檢驗項目／結果／單位</option></select></label>
+        <p class="helper">1090427 以報告日期整理觀測文字，不能當採血日期；生命徵象保留原始時間，日期未知不補今天。需逐筆選取後確認；不自動帶入腎功能或 TDM 計算欄。舊 A–G 模式仍拒絕誤貼新版。尚未驗收所有 HIS2 剪貼版型。固定格式以院內 Excel 單位解讀；一般 TSV 需明列單位與實際採血日期／時間，不接受報告時間代替。請勿貼姓名、病歷號等識別資料。同一病例可補資料；新病例請先按「清除本頁資料」。</p>
+        <div id="pharmacySelectionPanel" hidden><label class="check-line"><input id="pharmacyAllowDateCarry" type="checkbox">同一表區空白報告日期沿用上一列（需核對；預設關閉，變更後重新整理）</label><label>1090427：逐筆選取要帶入的項目（可多選；不選取報告者）<select id="pharmacyLabSelection" multiple size="8"></select></label><button id="selectAllPharmacyLabs" class="button" type="button">選取這次預覽的所有列</button><p class="helper">檢驗值不等同已確認的採血值；多筆同名項目會逐筆保留，請人工決定使用哪些。</p></div>
         <label>從 HIS2 複製後貼在這裡
           <textarea id="his2Paste" class="paste-box" rows="7" placeholder="保留原始 Tab 與空白欄。解析後請核對日期、項目、數值及單位。資料不會上傳。"></textarea>
         </label>
@@ -300,24 +301,39 @@
         <span id="noteGate" class="pill pill-muted">等待資料確認</span>
       </div>
       <div class="note-toolbar">
-        <p><strong>由藥師確認後才產生</strong><br>依院內 Vancomycin 範本使用 S／O／A／P 順序；不自行改寫固定英文句型。</p>
+        <p><strong>由藥師確認後才產生</strong><br>依找回的院內表單補齊表頭、S／O／A／P 與署名。可選既有專案固定句型或人工撰寫；固定句型須明確選擇方案並確認本案適用，不推測缺少的處方／日期。此為待覆核候選版，不代表新取得臨床核准。</p>
         <button id="generateNote" class="button button-primary" type="button">產生藥師確認建議</button>
       </div>
       <details id="noteFields">
-        <summary>檢查／修改帶入的 Pharmacy note 必填內容</summary>
+        <summary>檢查完整表單／人工填寫評估與計畫（未知欄位不補猜）</summary>
         <div class="details-body form-grid form-grid-two">
+          <label>文字模式<select id="noteMode"><option value="fixed">既有專案固定句型（需核對）</option><option value="manual">人工撰寫 A／P</option></select></label>
+          <label>固定句型方案（人工選擇）<select id="notePlanChoice"><option value="">請選擇</option><option value="keep">目標範圍內：維持目前劑量</option><option value="adjust">目標範圍外：採用已試算調整方案</option></select></label>
+          <label class="full-field"><span class="check-line"><input id="noteTemplateReviewed" type="checkbox">我已核對本案符合固定句型、手動 regimen、監測／追蹤計畫與參考資料；此操作不是系統自動醫囑。</span></label>
+          <p class="helper full-field">依既有規格「不輸入姓名」，新增病人識別／住院資訊欄位不收集，完整表單保留空白供院內授權流程填寫；既有選填病歷號不重複插入 SOAP 主體。</p>
+          <label>病人姓名（留白）<input id="notePatientName" disabled placeholder="依既有隱私規格留白" autocomplete="off"></label>
+          <label>病房號（未提供則留白）<input id="noteWard" disabled placeholder="依既有隱私規格留白" autocomplete="off"></label>
+          <label>住院日期（未提供則留白）<input id="noteAdmissionDate" disabled placeholder="依既有隱私規格留白" autocomplete="off" type="date"></label>
+          <label>轉入日期（未提供則留白）<input id="noteTransferDate" disabled placeholder="依既有隱私規格留白" autocomplete="off" type="date"></label>
+          <label>主治醫師（未提供則留白）<input id="noteAttending" disabled placeholder="依既有隱私規格留白" autocomplete="off"></label>
+          <label>藥師（未提供則留白）<input id="notePharmacist" autocomplete="off"></label>
+          <label>連絡電話（未提供則留白）<input id="notePhone" autocomplete="off"></label>
+          <label>填寫日期（未提供則留白）<input id="noteFillDate" autocomplete="off" type="date"></label>
           <label>檢驗：發炎指標、腎功能、CBC<textarea id="labs" rows="4"></textarea></label>
           <label>生命徵象<textarea id="vitals" rows="4"></textarea></label>
           <label>Vancomycin level 整理<textarea id="vanco" rows="4"></textarea></label>
           <label>臨床資料補充（培養／感染反應等，放入 O）<textarea id="clinicalSupplement" rows="4"></textarea></label>
-          <label>調整劑量稀釋液量（mL，調整時必填）<input id="noteDilution" type="number" min="1" placeholder="例如：250"></label>
-          <label>建議下次 Trough 時間（調整時必填）<input id="noteTroughTime" type="datetime-local"></label>
-          <label>建議下次 Peak 時間（調整時必填）<input id="notePeakTime" type="datetime-local"></label>
+          <label class="full-field">A：藥師評估（僅人工模式使用）<textarea id="noteAssessment" rows="4"></textarea></label>
+          <label class="full-field">P：藥師計畫（僅人工模式使用）<textarea id="notePlan" rows="5"></textarea></label>
+          <label class="full-field">參考資料（僅人工模式；固定模式沿用專案既有固定書名）<textarea id="noteReferences" rows="3"></textarea></label>
+          <label>固定句型調整：稀釋液量（mL）<input id="noteDilution" type="number"></label>
+          <label>固定句型調整：下次 Trough 採血時間<input id="noteTroughTime" type="datetime-local"></label>
+          <label>固定句型調整：下次 Peak 採血時間<input id="notePeakTime" type="datetime-local"></label>
         </div>
       </details>
       <textarea id="noteOutput" class="note-output" spellcheck="false" placeholder="藥師確認試算方案後，S／O／A／P 格式的 Pharmacy note 會出現在這裡。"></textarea>
       <div class="action-row" style="margin-top:10px">
-        <button id="copyNote" class="button button-primary" type="button">複製疑義處方文字</button>
+        <button id="copyNote" class="button button-primary" type="button">複製完整 Pharmacy note</button>
         <button id="downloadNote" class="button" type="button">下載 UTF-8 TXT</button>
       </div>
       <details style="margin-top:12px">
@@ -334,6 +350,96 @@
   <footer class="footer">臨床藥師工作台 · 離線執行 · 不上傳病人資料</footer>
 
   <script>
+/* Source-aware PharmacyNote 1090427 paste adapter. No storage/network/clinical calculations. */
+(function(root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.PharmacyLabAdapter = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function() {
+  'use strict';
+  const HEADERS = ['檢體名稱','報告日期','檢驗項目','檢驗報告','單位','標準(低)','標準(高)','報告者'];
+  const VITAL_HEADERS = ['時間','體溫','部位','脈搏','呼吸','血壓','血壓位','疼痛','SpO2(%)'];
+  const trim = v => String(v == null ? '' : v).trim();
+  function strictDate(raw) {
+    const s = trim(raw);
+    if (!s) return {iso:null,status:'missing'};
+    const m = /^(\d{4})([-/])(\d{2})\2(\d{2})$/.exec(s);
+    if (!m || +m[1] < 1900 || +m[1] > 9999) return {iso:null,status:'unrecognized'};
+    const y=+m[1], mo=+m[3], d=+m[4];
+    const dt=new Date(Date.UTC(y,mo-1,d));
+    if (dt.getUTCFullYear()!==y || dt.getUTCMonth()!==mo-1 || dt.getUTCDate()!==d) return {iso:null,status:'invalid'};
+    return {iso:`${m[1]}-${m[3]}-${m[4]}`,status:'valid'};
+  }
+  function valueInfo(raw) {
+    const s=trim(raw);
+    if (!s) return {numericValue:null,valueKind:'missing'};
+    if (/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(s)) {
+      const n=Number(s);
+      if (Number.isFinite(n)) return {numericValue:n,valueKind:'number'};
+    }
+    return {numericValue:null,valueKind:/^[<>≤≥]/.test(s)?'qualified':'text'};
+  }
+  function parsePharmacyLabPaste(text, {allowBlockDateCarry=false}={}) {
+    if (typeof text !== 'string') throw new TypeError('Paste must be a TSV string');
+    const out={schemaVersion:'pharmacy-lab-1090427/v1',format:'workbook1090427',status:'preview',requiresConfirmation:true,recognizesLayout:false,canApply:false,errors:[],records:[],vitals:[],warnings:[],rejectedRows:[]};
+    let offset=null, block=0, carryDate=null, carrySpecimen=null, vitalNext=false;
+    const reset=()=>{offset=null;carryDate=null;carrySpecimen=null;vitalNext=false;};
+    const reject=(row,rawCells,code)=>{out.rejectedRows.push({row,rawCells,code});reset();};
+    text.replace(/^\uFEFF/,'').split(/\r\n|\n|\r/).forEach((rawLine,index)=>{
+      const row=index+1, rawCells=rawLine.split('\t'), cells=rawCells.map(trim);
+      if(cells.every(c=>!c)){reset();return;}
+      const headerOffset=[0,2].find(o=>HEADERS.every((h,i)=>cells[o+i]===h));
+      if(headerOffset!==undefined){out.recognizesLayout=true;reset();offset=headerOffset;block++;return;}
+      if(VITAL_HEADERS.every((h,i)=>cells[i]===h)){out.recognizesLayout=true;reset();vitalNext=true;return;}
+      if(vitalNext){
+        if(rawCells.length<9 || rawCells.slice(9).some(trim)){reject(row,rawCells,'invalid-vitals-width');return;}
+        out.vitals.push({id:`vital-${row}`,timeRaw:rawCells[0],measurementDateISO:null,measurementTime:null,dateKind:'unknown',valuesRaw:Object.fromEntries(VITAL_HEADERS.slice(1).map((h,i)=>[h,rawCells[i+1]])),provenance:{row,rawCells:rawCells.slice()},warnings:['vitals-date-and-time-unverified','no-today-or-report-date-inference']});
+        reset();return;
+      }
+      if(offset===null){reject(row,rawCells,'outside-recognized-table');return;}
+      if(rawCells.length<offset+8 || rawCells.slice(offset+8).some(trim) || (offset===2 && cells.slice(0,2).some(Boolean))){reject(row,rawCells,'ambiguous-lab-row-layout');return;}
+      const [specimenRaw,reportDateRaw,analyteRaw,valueRaw,unitRaw,referenceLowRaw,referenceHighRaw,reporterRaw]=rawCells.slice(offset,offset+8);
+      if(!trim(analyteRaw)){reject(row,rawCells,'missing-analyte');return;}
+      const warnings=[];
+      // A changed specimen starts a new context: a blank date cannot carry across it.
+      if(trim(specimenRaw) && carrySpecimen && trim(specimenRaw)!==trim(carrySpecimen.raw)) carryDate=null;
+      if(trim(specimenRaw))carrySpecimen={raw:specimenRaw,row};
+      let date=strictDate(reportDateRaw), dateInherited=false, reportDateSourceRow=null;
+      if(trim(reportDateRaw)) {
+        carryDate=date.status==='valid'?{...date,raw:reportDateRaw,row}:null;
+        if(date.status!=='valid')warnings.push('unrecognized-or-invalid-report-date');
+        else reportDateSourceRow=row;
+      } else if(carryDate && allowBlockDateCarry===true){date=carryDate;dateInherited=true;reportDateSourceRow=carryDate.row;warnings.push('report-date-carried-within-header-block-review');}
+      else {warnings.push('report-date-missing');if(carryDate)warnings.push('possible-block-report-date-available-not-applied');}
+      const info=valueInfo(valueRaw);
+      if(info.valueKind==='missing')warnings.push('result-missing-not-zero');
+      if(!trim(unitRaw))warnings.push('source-unit-missing-no-inference');
+      const record={id:`lab-${row}`,analyteRaw,valueRaw,...info,unitRaw,referenceLowRaw,referenceHighRaw,reportDateRaw,reportDateISO:date.iso,reportDateEffectiveRaw:dateInherited?carryDate.raw:reportDateRaw,dateKind:'report',specimenRaw,specimenEffectiveRaw:carrySpecimen?carrySpecimen.raw:'',reporterRaw,provenance:{row,rawCells:rawCells.slice(),block,layout:offset===2?'A:J':'C:J',reportDateSourceRow,dateInherited,suggestedReportDateISO:!trim(reportDateRaw)&&carryDate?carryDate.iso:null,suggestedReportDateSourceRow:!trim(reportDateRaw)&&carryDate?carryDate.row:null,specimenSourceRow:carrySpecimen?carrySpecimen.row:null,specimenInherited:!trim(specimenRaw)&&!!carrySpecimen},warnings};
+      out.records.push(record);
+    });
+    if(out.records.length)out.warnings.push('report-dates-are-not-sampling-times','review-source-and-carried-dates-before-confirming','duplicates-preserved-no-first-or-latest-selection');
+    if(out.rejectedRows.length)out.warnings.push('unrecognized-rows-excluded-review-required');
+    if(!out.records.length && !out.vitals.length)out.warnings.push('no-recognized-records');
+    if(!out.recognizesLayout)out.errors.push('recognized-header-required');
+    out.canApply=out.records.length>0 || out.vitals.length>0; // Preview eligibility only; explicit confirmation still required.
+    return out;
+  }
+  // Confirmation is a note-only projection, not an instruction to populate a calculator.
+  // Deliberately exclude reporter and rawCells (may contain identifiers) from note export.
+  function confirmNoteSelection(preview, {confirmed=false,recordIds=[],vitalIds=[]}={}) {
+    if(!confirmed)throw new Error('Explicit preview confirmation required');
+    if(!preview || preview.schemaVersion!=='pharmacy-lab-1090427/v1' || preview.status!=='preview')throw new Error('Unsupported preview');
+    const pick=(rows,ids)=>{
+      if(!Array.isArray(ids) || new Set(ids).size!==ids.length)throw new Error('Unique explicit record IDs required');
+      return ids.map(id=>{const found=rows.find(r=>r.id===id);if(!found)throw new Error('Unknown record ID');return found;});
+    };
+    const labs=pick(preview.records,recordIds).map(r=>({id:r.id,analyteRaw:r.analyteRaw,valueRaw:r.valueRaw,valueKind:r.valueKind,numericValue:r.numericValue,unitRaw:r.unitRaw,referenceLowRaw:r.referenceLowRaw,referenceHighRaw:r.referenceHighRaw,reportDateRaw:r.reportDateRaw,reportDateISO:r.reportDateISO,reportDateEffectiveRaw:r.reportDateEffectiveRaw,dateKind:'report',specimenRaw:r.specimenRaw,specimenEffectiveRaw:r.specimenEffectiveRaw,provenance:{row:r.provenance.row,block:r.provenance.block,reportDateSourceRow:r.provenance.reportDateSourceRow,dateInherited:r.provenance.dateInherited},warnings:r.warnings.slice()}));
+    const vitals=pick(preview.vitals,vitalIds).map(r=>({id:r.id,timeRaw:r.timeRaw,measurementDateISO:null,measurementTime:null,dateKind:'unknown',valuesRaw:{...r.valuesRaw},provenance:{row:r.provenance.row},warnings:r.warnings.slice()}));
+    return {schemaVersion:preview.schemaVersion,status:'confirmed-note-selection',destination:'note-only',labs,vitals,calculatorInputsAllowed:false,samplingTimes:[],warnings:preview.warnings.slice()};
+  }
+  return Object.freeze({parsePharmacyLabPaste,confirmNoteSelection,strictDate,valueInfo});
+});
+
     const tabs = [...document.querySelectorAll('[role="tab"]')];
     function showTab(tabId) {
       tabs.forEach((tab) => {
@@ -653,11 +759,42 @@
     function normalizeLabUnit(value) {
       return String(value).trim().toLowerCase().replace(/[μµ]/g,'u').replace(/×/g,'*').replace(/\s/g,'').replace(/10³/g,'10^3').replace(/\bhrs?\b/g,'hr');
     }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function workbookNoteText(records, vitals) {
+      const raw = value => String(value == null ? '' : value).trim();
+      const labs = records.map(record => {
+        const dateRaw = raw(record.reportDateEffectiveRaw);
+        const date = dateRaw ? dateRaw + (!record.reportDateISO ? '（原文，日期格式未確認）' : '') : '未提供';
+        const inherited = record.provenance.dateInherited ? '（同表區沿用）' : '';
+        const result = raw(record.valueRaw) || '[未提供]';
+        const unit = raw(record.unitRaw) || '[單位未提供]';
+        return `報告日期：${date}${inherited}；${raw(record.analyteRaw)}: ${result} ${unit}`;
+      }).join('\n');
+      const vitalText = vitals.map(vital => `生命徵象：觀測日期未提供；時間原文：${raw(vital.timeRaw) || '[未提供]'}（未推定日期／時間格式）；` + Object.entries(vital.valuesRaw).map(([label,value]) => `${label}: ${raw(value) || '[未提供]'}`).join('、')).join('\n');
+      return {labs,vitalText};
+    }
     function parseHis2Text(raw, format = 'fixed') {
       const result = { containsLevels:false, containsCreatinine:false, records:[], vitals:[], errors:[], warnings:[], missing:[], labs:'', vitalText:'', vanco:'', canApply:false };
       if (!String(raw).trim()) { result.errors.push('請先貼上檢驗資料。'); return result; }
       if (raw.length > 100000) { result.errors.push('資料過長，請只貼上本次所需的去識別化檢驗資料。'); return result; }
+      if (format === 'workbook1090427') {
+        const workbook = PharmacyLabAdapter.parsePharmacyLabPaste(raw, {allowBlockDateCarry:document.getElementById('pharmacyAllowDateCarry').checked});
+        const text = workbookNoteText(workbook.records, workbook.vitals);
+        return { ...result, workbook, labs:text.labs, vitalText:text.vitalText,
+          canApply:workbook.canApply && workbook.recognizesLayout && !workbook.errors.length,
+          errors:workbook.errors.length ? ['需保留完整 1090427 A:J 或 C:J 欄名與 Tab；未知版型不猜測。'] : [],
+          warnings:['報告日期不是採血時間；本模式只帶入觀測文字，不更動 SCr、TDM 濃度或採血時間。','原始空白與單位未提供均保留；同名多筆不自動選最新。', ...(workbook.rejectedRows.length ? [`有 ${workbook.rejectedRows.length} 列不屬支援版型，未帶入；請核對來源，不能視為全部匯入。`] : [])] };
+      }
       const rows = raw.replace(/\r\n?/g,'\n').split('\n').map(line => line.split('\t').map(cell => cell.trim()));
+      // Fail closed on the current workbook layout until a source-aware adapter is verified.
+      if (format === 'fixed' && rows.some(row => row.some(cell => /^(報告日期|報告時間|report date|report time)$/i.test(cell)))) {
+        result.errors.push('偵測到報告日期／時間欄（含 1090427 版）。目前固定 A–G 匯入不支援此版型；報告日期不是採血日期，請人工核對實際採血時間後使用明確採血欄名 TSV，或手動填寫。不得直接改名報告日期。');
+        return result;
+      }
+      if (format === 'fixed' && rows.some(row => row[0] === '時間' && /體溫/.test(row[1] || '') && /脈搏/.test(row[3] || '') && /血壓/.test(row[5] || ''))) {
+        result.errors.push('偵測到 1090427 A:I 生命徵象版型；目前尚未支援，不會略過後宣稱匯入成功。請人工核對觀測日期與數值後手動填寫。');
+        return result;
+      }
       const add = (name, value, unit, date, line, fixed = false) => {
         if (!name) return;
         if (['Peak','Trough'].includes(name)) result.containsLevels = true;
@@ -698,6 +835,7 @@
       } else if (format === 'fixed') {
         let labDate = null;
         rows.forEach((row,index) => {
+          if (row.some(cell => /^(檢驗項目|項目|test)$/i.test(cell))) { labDate = null; return; }
           if (normalizeLabName(row[4]) && row[3]) {
             labDate = parseLabDate(row[3]);
             if (!labDate) result.errors.push(`第 ${index + 1} 列 D 欄日期無效。`);
@@ -736,6 +874,7 @@
     }
     let currentHis2 = null;
     function invalidateHis2() {
+      document.getElementById('noteTemplateReviewed').checked = false;
       clearApprovedNote('貼上內容或格式已變更，請重新整理、核對後產生 Pharmacy note');
       currentHis2 = null;
       document.getElementById('applyHis2').disabled = true;
@@ -743,9 +882,13 @@
       document.getElementById('preview').hidden = true;
     }
     function parseHis2() {
+      document.getElementById('noteTemplateReviewed').checked = false;
       const paste = document.getElementById('his2Paste');
       const parsed = parseHis2Text(paste.value, document.getElementById('his2Format').value || 'fixed');
       currentHis2 = { ...parsed, previousLabs:document.getElementById('labs').value, previousVitals:document.getElementById('vitals').value, source:paste.value, format:document.getElementById('his2Format').value || 'fixed' };
+      const selection = document.getElementById('pharmacyLabSelection');
+      document.getElementById('pharmacySelectionPanel').hidden = !parsed.workbook;
+      selection.innerHTML = parsed.workbook ? [...parsed.workbook.records.map(r => ({id:r.id,label:`第${r.provenance.row}列｜${r.analyteRaw}｜${String(r.valueRaw).trim() || '[未提供]'} ${r.unitRaw}｜報告日期 ${r.reportDateEffectiveRaw || '[未提供]'}`})), ...parsed.workbook.vitals.map(v => ({id:v.id,label:`第${v.provenance.row}列｜生命徵象｜時間原文 ${v.timeRaw}，日期未提供`}))].map(item => `<option value="${item.id}">${escapeHtml(item.label)}</option>`).join('') : '';
       document.getElementById('previewLabs').textContent = parsed.labs || ('未找到；將保留既有檢驗文字，需重新核對：\n' + (document.getElementById('labs').value || '目前空白'));
       document.getElementById('previewVitals').textContent = parsed.vitalText || ('未找到；將保留既有生命徵象，需重新核對：\n' + (document.getElementById('vitals').value || '目前空白'));
       document.getElementById('previewVanco').textContent = parsed.vanco || '未找到 Vancomycin level（不覆寫既有 TDM）';
@@ -761,6 +904,21 @@
       if (!parsed || !parsed.canApply || (!parsed.labs && parsed.previousLabs !== document.getElementById('labs').value) || (!parsed.vitalText && parsed.previousVitals !== document.getElementById('vitals').value) || parsed.source !== document.getElementById('his2Paste').value || parsed.format !== (document.getElementById('his2Format').value || 'fixed') || (!demo && !document.getElementById('his2Reviewed').checked)) {
         document.getElementById('noteGate').textContent = '請先整理、處理錯誤並核對預覽後再帶入';
         return false;
+      }
+      document.getElementById('noteTemplateReviewed').checked = false;
+      if (parsed.workbook) {
+        const ids = Array.from(document.getElementById('pharmacyLabSelection').selectedOptions || []).map(option => option.value);
+        if (!ids.length) { document.getElementById('noteGate').textContent = '請明確選取要帶入的檢驗／生命徵象列，不自動選全部或最新值。'; return false; }
+        const chosen = PharmacyLabAdapter.confirmNoteSelection(parsed.workbook, {confirmed:true,recordIds:ids.filter(id=>id.startsWith('lab-')),vitalIds:ids.filter(id=>id.startsWith('vital-'))});
+        const text = workbookNoteText(chosen.labs, chosen.vitals);
+        clearApprovedNote();
+        if (text.labs) document.getElementById('labs').value = text.labs;
+        if (text.vitalText) document.getElementById('vitals').value = text.vitalText;
+        document.getElementById('noteGate').textContent = '已帶入選取的觀測文字；報告日期保留原意，SCr／TDM／採血時間未更動，請分別核對本案資料。';
+        document.getElementById('noteFields').open = true;
+        document.getElementById('his2Reviewed').checked = false;
+        document.getElementById('applyHis2').disabled = true;
+        return true;
       }
       clearTdmDerived();
       if (parsed.labs) document.getElementById('labs').value = parsed.labs;
@@ -800,12 +958,14 @@
         'dosingContext','crrtEffluent','diagnosis','tdmDose','tdmInterval','tdmInfusion','tdmMic',
         'tdmTrough','tdmTroughTime','tdmDoseTime','tdmPeak','tdmPeakTime','nextDose','nextInterval',
         'nextInfusion','nextInfusionGap','simulationDoses','his2Paste','his2Format','his2Reviewed','labs','vitals','vanco',
-        'clinicalSupplement','noteDilution','noteTroughTime','notePeakTime'];
+        'clinicalSupplement','noteDilution','noteTroughTime','notePeakTime','notePatientName','noteWard','noteAdmissionDate','noteTransferDate','noteAttending','notePharmacist','notePhone','noteFillDate','noteAssessment','notePlan','noteReferences','noteMode','notePlanChoice','noteTemplateReviewed'];
       return JSON.stringify({
         inputs:ids.map((id) => {
           const input = document.getElementById(id);
           return [id, input.value, Boolean(input.checked)];
         }),
+        pharmacySelection:Array.from(document.getElementById('pharmacyLabSelection').selectedOptions || []).map(option=>option.value),
+        pharmacyAllowDateCarry:document.getElementById('pharmacyAllowDateCarry').checked,
         auc:currentAucResult,
         trial:currentTrialResult
       });
@@ -843,7 +1003,7 @@
       if (!validResult(doseResult, ['ibw','calculationWeight','scrUsed','crcl'])) blockers.push('請完成有效的共同資料與腎功能計算');
       if (!validResult(aucResult, ['dose','interval','infusionMinutes','mic','peak','trough','auc24','aucMic','halfLife','vd','clearance','k']) ||
           !['目標範圍內','低於目標','高於目標'].includes(aucResult?.status)) blockers.push('請完成有效的 TDM／AUC 計算，並檢查數值與抽血時序');
-      if (aucResult && aucResult.mic !== 1) blockers.push('MIC 不等於 1；目前核准範本的 AUC 判讀不適用，請人工覆核，暫不自動產生建議');
+      if (aucResult && aucResult.mic !== 1) blockers.push('MIC 不等於 1；目前自動 AUC 判讀不適用，請人工覆核，暫不自動產生建議');
       const diagnosis = document.getElementById('diagnosis').value.trim();
       if (!diagnosis) blockers.push('請填寫 Diagnosis');
       if (!document.getElementById('labs').value.trim()) blockers.push('請填寫並確認檢驗數值');
@@ -852,19 +1012,36 @@
       const weight = numberValue('weight');
       const sex = document.getElementById('sex').value;
       if (![age, weight].every(positive) || !['male','female'].includes(sex)) blockers.push('請填寫有效年齡、性別及體重');
-      const adjusting = aucResult && aucResult.status !== '目標範圍內';
+      const hasTrialInput = ['nextDose','nextInterval','nextInfusion','nextInfusionGap'].some(id => document.getElementById(id).value.trim());
+      if (hasTrialInput && !validResult(trialResult, ['dose','interval','infusionMinutes','peak','trough','auc24','aucMic'])) blockers.push('已填入的後續 regimen 無效，請修正或清空後重新確認');
+      const fixedMode = document.getElementById('noteMode').value === 'fixed';
+      if (!['fixed','manual'].includes(document.getElementById('noteMode').value)) blockers.push('請選擇文字模式');
+      const planChoice = document.getElementById('notePlanChoice').value;
+      if (fixedMode && !document.getElementById('noteTemplateReviewed').checked) blockers.push('請先核對固定句型及本案方案，再勾選確認');
+      if (fixedMode && !['keep','adjust'].includes(planChoice)) blockers.push('請人工選擇固定句型方案');
+      const adjusting = fixedMode && planChoice === 'adjust';
+      if (fixedMode && aucResult) {
+        if (planChoice === 'keep' && aucResult.status !== '目標範圍內') blockers.push('維持句型僅適用目標範圍內；請重新核對方案');
+        if (planChoice === 'adjust' && aucResult.status === '目標範圍內') blockers.push('此固定調整句型未定義目標內調整情境，請使用人工模式');
+        if (planChoice === 'keep' && trialResult && (trialResult.dose !== aucResult.dose || trialResult.interval !== aucResult.interval || trialResult.infusionMinutes !== aucResult.infusionMinutes)) blockers.push('維持方案與試算的新 regimen 不同；請清空試算或重新核對方案');
+      }
       const dilution = numberValue('noteDilution');
       const nextTrough = noteDateValue(document.getElementById('noteTroughTime').value);
       const nextPeak = noteDateValue(document.getElementById('notePeakTime').value);
       if (adjusting) {
-        if (!validResult(trialResult, ['dose','interval','infusionMinutes','peak','trough','auc24','aucMic'])) {
-          blockers.push('請輸入並完成有效的藥師後續 regimen 試算');
-          document.getElementById('aucAdjustment').open = true;
-        }
+        if (!validResult(trialResult, ['dose','interval','infusionMinutes','peak','trough','auc24','aucMic'])) blockers.push('請完成有效的藥師後續 regimen 試算');
         if (!positive(dilution)) blockers.push('請填寫有效的調整劑量稀釋液量');
         if (!nextTrough || !nextPeak) blockers.push('請填寫有效的建議下次 Trough／Peak 時間');
-        else if (nextTrough.getTime() >= nextPeak.getTime()) blockers.push('建議下次 Trough 時間必須早於 Peak 時間');
-        else if (nextTrough.getTime() <= Date.parse(document.getElementById('tdmPeakTime').value)) blockers.push('建議下次採血時間必須晚於本次 Peak 採血時間');
+        else if (nextTrough >= nextPeak) blockers.push('建議下次 Trough 時間必須早於 Peak 時間');
+        else if (aucResult && nextTrough.getTime() <= Date.parse(document.getElementById('tdmPeakTime').value)) blockers.push('建議下次採血時間必須晚於本次 Peak 採血時間');
+      }
+      const assessmentText = document.getElementById('noteAssessment').value.trim();
+      const planText = document.getElementById('notePlan').value.trim();
+      if (!fixedMode && !assessmentText) blockers.push('請由藥師填寫 A：評估，不由歷史病例自動推導');
+      if (!fixedMode && !planText) blockers.push('請由藥師填寫 P：計畫，不預設治療建議');
+      for (const id of ['noteAdmissionDate','noteTransferDate','noteFillDate']) {
+        const value = document.getElementById(id).value.trim();
+        if (value && !noteDateValue(value + 'T00:00')) blockers.push('請確認表頭／填寫日期為有效日期，未知請留白');
       }
       if (blockers.length) {
         clearApprovedNote(blockers.join('；') + '。');
@@ -906,17 +1083,24 @@
           : `1. Suggest adjusting Vancomycin to ${numericText(trialResult.dose)} mg Q${numericText(trialResult.interval)}H based on the patient’s AUC (${aucResult.auc24.toFixed(2)} mcg·h/mL).`;
         const monitoringSentence = increasing
           ? `2. Suggested ordering Vancomycin trough level (${troughTime}) and peak level (${peakTime}).`
-          : `2. Suggest trough level (${troughTime}) and peak levels (${peakTime}) will be ordered.`;
+          : `2. Suggested ordering Vancomycin trough level (${troughTime}) and peak level (${peakTime}).`;
         planLines = [
           'P:', adjustmentSentence, monitoringSentence,
           '3. I will reassess for adequate infection response after 48-72 hrs.',
           '4. If you have any questions, please contact me.'
         ];
       }
-      noteOutput.value = [subject, '', ...objectiveLines, '', assessment, '', ...planLines, '',
-        '參考資料', '1. Up To Date', '2. The sanford guide to antimicrobial therapy'].join('\n');
+      const value = (id) => ['notePatientName','noteWard','noteAdmissionDate','noteTransferDate','noteAttending'].includes(id) ? '' : document.getElementById(id).value.trim();
+      const header = [
+        '佛教大林慈濟綜合醫院', '藥師評估記錄 (Pharmacy note)',
+        `病人姓名：${value('notePatientName')}　病歷號：${value('patientId')}　病房號：${value('noteWard')}`,
+        `住院日期：${value('noteAdmissionDate')}　轉入日期：${value('noteTransferDate')}　主治醫師：${value('noteAttending')}`
+      ];
+      noteOutput.value = [...header, '', subject, '', ...objectiveLines, '',
+        ...(fixedMode ? [assessment, '', ...planLines] : ['A:', assessmentText, '', 'P:', planText]), '', '參考資料', ...(fixedMode ? ['1. Up To Date','2. The sanford guide to antimicrobial therapy'] : [value('noteReferences')]), '',
+        `藥師：${value('notePharmacist')}　連絡電話：${value('notePhone')}　填寫日期：${value('noteFillDate')}`].join('\n');
       approvedNoteSnapshot = noteInputSnapshot();
-      noteGate.textContent = '已依主管核准範本產生，待藥師逐句確認';
+      noteGate.textContent = fixedMode ? '已依既有專案固定句型組成完整表單，請逐欄核對後匯出' : '已組成完整表單草稿；A／P 為人工輸入，請逐欄核對後匯出';
       noteGate.className = 'pill';
       return true;
     }
@@ -1014,6 +1198,9 @@
       }
     }
 
+    document.getElementById('pharmacyAllowDateCarry').addEventListener('change', invalidateHis2);
+    document.getElementById('pharmacyLabSelection').addEventListener('change', () => { clearApprovedNote(); document.getElementById('his2Reviewed').checked = false; document.getElementById('applyHis2').disabled = true; });
+    document.getElementById('selectAllPharmacyLabs').addEventListener('click', () => { document.getElementById('noteTemplateReviewed').checked = false; Array.from(document.getElementById('pharmacyLabSelection').options || []).forEach(option => { option.selected = true; }); clearApprovedNote(); document.getElementById('his2Reviewed').checked = false; document.getElementById('applyHis2').disabled = true; });
     document.getElementById('sampleHis2').addEventListener('click', () => {
       document.getElementById('his2Paste').value = sample;
       document.getElementById('his2Format').value = 'fixed';
@@ -1043,18 +1230,27 @@
     ['nextDose','nextInterval','nextInfusion','nextInfusionGap','simulationDoses'].forEach((id) => {
       document.getElementById(id).addEventListener('input', clearTrialDerived);
     });
-    ['diagnosis','labs','vitals','vanco','clinicalSupplement','noteDilution','noteTroughTime','notePeakTime'].forEach((id) => {
+    ['diagnosis','labs','vitals','vanco','clinicalSupplement','noteDilution','noteTroughTime','notePeakTime','notePatientName','noteWard','noteAdmissionDate','noteTransferDate','noteAttending','notePharmacist','notePhone','noteFillDate','noteAssessment','notePlan','noteReferences','noteMode','notePlanChoice','noteTemplateReviewed'].forEach((id) => {
       document.getElementById(id).addEventListener('input', () => clearApprovedNote());
+      document.getElementById(id).addEventListener('change', () => clearApprovedNote());
     });
     ['patientId','age','sex','height','weight','scr','dosingContext','crrtEffluent'].forEach((id) => {
       document.getElementById(id).addEventListener('input', () => clearApprovedNote());
       document.getElementById(id).addEventListener('change', () => clearApprovedNote());
     });
     document.querySelectorAll('input,select,textarea').forEach((input) => {
+      if (!['noteTemplateReviewed','noteOutput'].includes(input.id)) ['input','change'].forEach(event => input.addEventListener(event, () => { document.getElementById('noteTemplateReviewed').checked = false; }));
       ['input','change'].forEach((event) => input.addEventListener(event, () => { document.getElementById('demoNotice').hidden = true; }));
     });
     document.getElementById('clearPage').addEventListener('click', () => location.reload());
     document.getElementById('loadDemo').addEventListener('click', () => {
+      // A demo must never retain identity, dates, signatures or references from a prior case.
+      ['notePatientName','noteWard','noteAdmissionDate','noteTransferDate','noteAttending','notePharmacist','notePhone','noteFillDate','noteAssessment','notePlan','noteReferences'].forEach(id => { document.getElementById(id).value = ''; });
+      clearApprovedNote();
+      document.getElementById('pharmacyAllowDateCarry').checked = false;
+      document.getElementById('noteMode').value = 'fixed';
+      document.getElementById('notePlanChoice').value = 'adjust';
+      document.getElementById('noteTemplateReviewed').checked = true;
       document.getElementById('demoNotice').hidden = false;
       document.getElementById('patientId').value = 'DEMO-001';
       document.getElementById('diagnosis').value = 'MRSA bacteremia（假資料）';
@@ -1094,6 +1290,9 @@
       calculateTrial();
       document.getElementById('aucAdjustment').open = true;
       document.getElementById('serialPrediction').open = true;
+      document.getElementById('noteAssessment').value = '【合成展示，非臨床建議】此處由藥師記錄評估。';
+      document.getElementById('notePlan').value = '【合成展示，非臨床建議】此處由藥師記錄個別化計畫。';
+      document.getElementById('noteTemplateReviewed').checked = true; // Explicit synthetic-demo action only.
       generateNote();
       showTab('tab-tdm');
       document.getElementById('loadDemo').textContent = '完整假資料已載入';
@@ -1101,3 +1300,4 @@
   </script>
 </body>
 </html>
+
